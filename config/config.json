@@ -1,0 +1,16 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "FaculRide1!",
+    "database": "postgres",
+    "host": "db.qnftaibaldiiszccfjlu.supabase.co",
+    "port": 5432,
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectUnauthorized": false
+      }
+    }
+  }
+}
