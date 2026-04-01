@@ -11,6 +11,8 @@ import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
+import {s3} from '../utils/s3Client'
+import { PutObject$ } from "@aws-sdk/client-s3";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
@@ -329,7 +331,7 @@ export const uploadFotoUsuario = async (req: Request, res: Response) => {
     if (!file) {
       return res.status(400).json({ erro: "Envie um arquivo em 'file' (multipart/form-data)" });
     }
-
+    
     const mime = file.mimetype;
     const allow = ["image/jpeg", "image/png", "image/webp"];
     if (!allow.includes(mime)) {
@@ -338,20 +340,26 @@ export const uploadFotoUsuario = async (req: Request, res: Response) => {
     if (file.size > 5 * 1024 * 1024) { // 5MB
       return res.status(400).json({ erro: "Arquivo muito grande (máx. 5MB)." });
     }
-
+    
     const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
     const bucket = process.env.SUPABASE_BUCKET || "faculride";
     const filePath = `${idUsuario}/profile.${ext}`;
-
+    
     const { error: upErr } = await supabaseAdmin
-      .storage.from(bucket)
-      .upload(filePath, file.buffer, { contentType: mime, upsert: true });
-
+    .storage.from(bucket)
+    .upload(filePath, file.buffer, { contentType: mime, upsert: true });
+    
     if (upErr) {
       console.error("Erro no upload Supabase:", upErr);
       return res.status(500).json({ erro: "Falha ao enviar arquivo ao Storage" });
     }
-
+    const comand = new PutObject$({
+      Bucket: 'davy23',
+      Key: file.originalname,
+      ACL:'public-read',
+      ContentType:file
+    })
+    
     const { data: pub } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
     const fotoUrl = pub?.publicUrl ?? null;
 
