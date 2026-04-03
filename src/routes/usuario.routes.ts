@@ -39,7 +39,7 @@ router.post("/login", (req, res) => {
 });
 
 // A partir daqui todas as rotas são protegidas
-router.use(AuthorizeMiddleware as any);
+//router.use(AuthorizeMiddleware as any);
 
 // GET Listar ou filtrar usuários 
 router.get("/", async (req, res) => {

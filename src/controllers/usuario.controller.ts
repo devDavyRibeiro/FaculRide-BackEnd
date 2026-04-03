@@ -11,8 +11,8 @@ import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
-import {s3} from '../utils/s3Client'
-import { PutObject$ } from "@aws-sdk/client-s3";
+import {s3, uploadArquivoS3} from '../utils/s3Client'
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
@@ -323,15 +323,18 @@ export const uploadFotoUsuario = async (req: Request, res: Response) => {
   try {
     const userCtx = (req as any).user;
     const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
-    if (!idUsuario) {
-      return res.status(401).json({ erro: "Usuário não autenticado" });
-    }
+    // if (!idUsuario) {
+    //   return res.status(401).json({ erro: "Usuário não autenticado" });
+    // }
 
     const file = (req as any).file as { buffer: Buffer; mimetype: string; size: number; originalname: string } | undefined;
     if (!file) {
       return res.status(400).json({ erro: "Envie um arquivo em 'file' (multipart/form-data)" });
     }
-    
+
+    const aws =  await uploadArquivoS3(req.file!);
+    console.log("Upload AWS S3 concluído:", aws);
+
     const mime = file.mimetype;
     const allow = ["image/jpeg", "image/png", "image/webp"];
     if (!allow.includes(mime)) {
@@ -342,6 +345,7 @@ export const uploadFotoUsuario = async (req: Request, res: Response) => {
     }
     
     const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+
     const bucket = process.env.SUPABASE_BUCKET || "faculride";
     const filePath = `${idUsuario}/profile.${ext}`;
     
@@ -353,12 +357,7 @@ export const uploadFotoUsuario = async (req: Request, res: Response) => {
       console.error("Erro no upload Supabase:", upErr);
       return res.status(500).json({ erro: "Falha ao enviar arquivo ao Storage" });
     }
-    const comand = new PutObject$({
-      Bucket: 'davy23',
-      Key: file.originalname,
-      ACL:'public-read',
-      ContentType:file
-    })
+
     
     const { data: pub } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
     const fotoUrl = pub?.publicUrl ?? null;

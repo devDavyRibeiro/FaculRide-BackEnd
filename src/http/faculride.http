@@ -35,8 +35,8 @@ POST http://localhost:3000/api/auth
 Content-Type: application/json
 
 {
-  "nome": "Herivelton",
-  "email": "herivelton02@gmail.com",
+  "nome": "DavyRibeiro",
+  "email": "davy@gmail.com",
   "senha": "Abc123!",
   "telefone": "15991697891",
   "cpf": "40560741863",
