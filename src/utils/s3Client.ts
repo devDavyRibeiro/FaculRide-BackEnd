@@ -26,6 +26,7 @@ export async function uploadArquivoS3(file: Express.Multer.File) {
   });
 
   const result = await upload.done();
+  console.log("Upload concluído:", result);
 
   return result;
 }
