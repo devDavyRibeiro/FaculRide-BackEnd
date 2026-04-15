@@ -10,11 +10,10 @@ export async function uploadArquivoS3(file: Express.Multer.File) {
   const upload = new Upload({
     client: s3,
     params: {
-      Bucket: "davy24",
+      Bucket: process.env.BUCKET_NAME!,
       Key: file.originalname,
       Body: file.buffer,
       ContentType: file.mimetype,
-      ACL: "public-read"
     },
 
     queueSize: 4, // uploads paralelos
