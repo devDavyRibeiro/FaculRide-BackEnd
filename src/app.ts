@@ -5,6 +5,9 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 
+//import logger do cloudwatch
+import { logger } from './middlewares/logger';
+
 // Importação do Swagger
 import { setupSwagger } from "./swagger/swagger";
 
@@ -71,6 +74,13 @@ app.options("*", cors());
 /** -------------------------------- */
 
 app.use(express.json());
+
+//log do cloudwatch
+app.use(logger);
+
+app.get("/teste-log", (req, res) => {
+  res.json({ ok: true });
+});
 
 // Swagger
 setupSwagger(app);
