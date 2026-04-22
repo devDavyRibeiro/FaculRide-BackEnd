@@ -53,7 +53,7 @@ export const main = async (bucketName: string, key: string) => {
       }),
     );
     // The Body object also has 'transformToByteArray' and 'transformToWebStream' methods.
-    const str = await response.Body.transformToString();
+    const str = await response.Body?.transformToString();
     console.log(str);
   } catch (caught) {
     if (caught instanceof NoSuchKey) {
