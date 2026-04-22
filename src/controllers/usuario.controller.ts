@@ -334,7 +334,6 @@ export const uploadFotoUsuario = async (req: Request, res: Response) => {
 
     const aws =  await uploadArquivoS3(req.file!);
     //console.log("Upload AWS S3 concluído:", aws);
-
     const mime = file.mimetype;
     const allow = ["image/jpeg", "image/png", "image/webp"];
     if (!allow.includes(mime)) {
