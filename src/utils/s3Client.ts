@@ -1,5 +1,6 @@
 import {
   GetObjectCommand,
+  ListObjectsV2Command,
   NoSuchKey,
   S3Client,
   S3ServiceException,
@@ -19,6 +20,7 @@ export async function uploadArquivoS3(file: Express.Multer.File) {
       Key: file.originalname,
       Body: file.buffer,
       ContentType: file.mimetype,
+      ACL: "public-read",
     },
 
     queueSize: 4, // uploads paralelos
@@ -42,30 +44,23 @@ export async function uploadArquivoS3(file: Express.Multer.File) {
 //   return result;
 // }
 
-export const main = async (bucketName: string, key: string) => {
-  const client = new S3Client({});
+export async function getArquivoS3() {
+  const params = {
+    Bucket: process.env.BUCKET_NAME!,
+    // Prefix: "pasta/", // Opcional: filtrar por pasta/prefixo
+  };
 
   try {
-    const response = await client.send(
-      new GetObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-      }),
-    );
-    // The Body object also has 'transformToByteArray' and 'transformToWebStream' methods.
-    const str = await response.Body?.transformToString();
-    console.log(str);
-  } catch (caught) {
-    if (caught instanceof NoSuchKey) {
-      console.error(
-        `Error from S3 while getting object "${key}" from "${bucketName}". No such key exists.`,
-      );
-    } else if (caught instanceof S3ServiceException) {
-      console.error(
-        `Error from S3 while getting object from ${bucketName}.  ${caught.name}: ${caught.message}`,
-      );
-    } else {
-      throw caught;
-    }
+    // Enviar o comando
+    const data = await s3.send(new ListObjectsV2Command(params));
+    
+    // Processar e exibir os resultados
+    console.log("Objetos encontrados:");
+    data.Contents?.forEach((object) => {
+      console.log(` - ${object.Key} (${object.Size} bytes)`);
+    });
+    return data.Contents;
+  } catch (err) {
+    console.error("Erro ao listar objetos:", err);
   }
-};
+}
