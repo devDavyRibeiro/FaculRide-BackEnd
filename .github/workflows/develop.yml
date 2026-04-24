@@ -1,0 +1,309 @@
+name: CI / CD - Back - Development
+
+
+
+on:
+
+  push:
+
+    branches:
+
+      - feature/actions
+
+
+
+permissions:
+
+    contents: write
+
+    pull-requests: read
+
+
+
+jobs:
+
+  pipeline:
+
+    runs-on: ubuntu-latest
+
+
+
+    steps:
+
+      - name: Checkout code
+
+        uses: actions/checkout@v3
+
+        with:
+
+          fetch-depth: 0
+
+
+
+      # Configura o Node.js compatível com seu ambiente
+
+      - name: Setup Node.js
+
+        uses: actions/setup-node@v3
+
+        with:
+
+          node-version: '24.14.0'
+
+          cache: 'npm'
+
+
+
+      - name: Validar mensagens dos commits
+
+        uses: wagoid/commitlint-github-action@v5
+
+        with:
+
+          configFile: ./commitlint.config.js
+
+          failOnWarnings: false
+
+          helpMessage: "Utilize o padrão: tipo(escopo): descrição (ex: feat(ui): novo botão)"
+
+
+
+      - name: Instalar Dependências
+
+        run: npm install
+
+
+
+      - name: Instalar Semver Global
+
+        run: npm install -g semver
+
+
+
+      - name: Calcular nova versão Preview
+
+        id: version
+
+        shell: bash
+
+        run: |
+
+          git fetch --tags --force --prune
+
+               
+
+          # Tenta pegar a última tag real
+
+          LAST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+
+               
+
+          if [ -z "$LAST_TAG" ]; then
+
+            echo "Nenhuma tag encontrada. Iniciando do zero."
+
+            BASE_VERSION="0.0.0"
+
+            # Se não há tag, validamos todos os commits desde o início
+
+            RANGE="HEAD"
+
+          else
+
+            echo "Última tag encontrada: $LAST_TAG"
+
+            BASE_VERSION="${LAST_TAG#v}"
+
+            # Remove sufixos para cálculo (ex: 1.0.1-preview.1 -> 1.0.1)
+
+            BASE_VERSION=$(echo $BASE_VERSION | cut -d'-' -f1)
+
+            RANGE="${LAST_TAG}..HEAD"
+
+          fi
+
+               
+
+          # Detecta se houve alguma 'feat' (incrementa minor) ou apenas fixes (patch)
+
+          # O '|| true' impede que o grep quebre o script caso não encontre nada
+
+          INC_TYPE="patch"
+
+          if git log $RANGE --pretty=%s 2>/dev/null | grep -qE "^feat|^feat\!"; then
+
+            INC_TYPE="minor"
+
+          fi
+
+
+
+          # Calcula a base (ex: 1.1.0 ou 1.0.2)
+
+          # Usamos npx para garantir que o semver funcione mesmo que o global falhe
+
+          NEW_BASE=$(npx semver -i $INC_TYPE "$BASE_VERSION")
+
+
+
+          # Contador de previews para esta versão específica
+
+          COUNT=$(git tag --list "v${NEW_BASE}-preview.*" | wc -l | xargs)
+
+          PREVIEW_VERSION="v${NEW_BASE}-preview.$((COUNT+1))"
+
+
+
+          echo "Calculado: $PREVIEW_VERSION (Tipo: $INC_TYPE)"
+
+          echo "new_version=$PREVIEW_VERSION" >> $GITHUB_OUTPUT
+
+
+
+      - name: Atualizar package.json
+
+        id: update_package
+
+        run: |
+
+          # Pega a versão completa calculada no step anterior (ex: 1.1.0-preview.1)
+
+          # Removemos o 'v' inicial se existir, pois o package.json usa apenas números/texto
+
+          FULL_VERSION="${{ steps.version.outputs.new_version }}"
+
+          VERSION_VALUE="${FULL_VERSION#v}"
+
+         
+
+          echo "Atualizando package.json para: $VERSION_VALUE"
+
+
+
+          node -e "
+
+            const fs = require('fs');
+
+            const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+
+            pkg.version = '$VERSION_VALUE';
+
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2), 'utf8');
+
+          "
+
+         
+
+          echo "new_version=$VERSION_VALUE" >> $GITHUB_OUTPUT
+
+
+
+      - name: Criar Release Preview (GitHub)
+
+        uses: softprops/action-gh-release@v1
+
+        with:
+
+          tag_name: ${{ steps.version.outputs.new_version }}
+
+          name: "Mobile Preview ${{ steps.version.outputs.new_version }}"
+
+          draft: false
+
+          prerelease: true
+
+          generate_release_notes: true
+
+        env:
+
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+
+      - name: Commit e Push da Versão
+
+        env:
+
+          # Use o GITHUB_TOKEN se a branch develop não tiver restrições de Admin
+
+          # Ou um Personal Access Token (PAT) se a branch for protegida
+
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        run: |
+
+          git config user.name "github-actions[bot]"
+
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+         
+
+          git add package.json
+
+         
+
+          # O [skip ci] no final da mensagem é CRÍTICO.
+
+          # Ele diz ao GitHub: "Não dispare outro pipeline por causa deste commit".
+
+          # Sem isso, você entra em um loop infinito de builds.
+
+          git commit -m "chore(version): bump to ${{ steps.version.outputs.new_version }} [skip ci]" || echo "Sem alterações para commitar"
+
+         
+
+          git push origin develop
+
+  notify_failure:
+
+    name: Notificar Falha
+
+    needs: pipeline
+
+    runs-on: ubuntu-latest
+
+    if: failure()
+
+    steps:
+
+      - name: Enviar E-mail de Erro
+
+        uses: dawidd6/action-send-mail@v3
+
+        with:
+
+          server_address: ${{ secrets.MAIL_HOST }}
+
+          server_port: ${{ secrets.MAIL_PORT }}
+
+          username: ${{ secrets.MAIL_USER }}
+
+          password: ${{ secrets.MAIL_PASS }}
+
+          subject: "🚨 FALHA NO CI/CD: ${{ github.repository }}"
+
+          to: "${{ secrets.TEAM_EMAILS }}"
+
+          from: "GitHub Actions <no-reply@seu-dominio.com>"
+
+          # Texto simples e direto sem dependência de arquivos externos
+
+          body: |
+
+            O pipeline do projeto Mobile ${{ github.repository }} falhou!
+
+           
+
+            Detalhes:
+
+            - Branch: ${{ github.ref_name }}
+
+            - Autor do Commit: ${{ github.actor }}
+
+            - Workflow: ${{ github.workflow }}
+
+            - Log do Erro: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+           
+
+            Verifique o link acima para entender a causa da falha.
