@@ -1,6 +1,6 @@
 {
   "name": "faculride",
-  "version": "1.0.0",
+  "version": "0.1.2-preview.1",
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only ./src/app.ts",
