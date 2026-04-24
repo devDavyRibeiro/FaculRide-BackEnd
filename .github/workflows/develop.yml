@@ -252,7 +252,7 @@ jobs:
 
          
 
-          git push origin develop
+          git push origin feature/actions
 
   notify_failure:
 
