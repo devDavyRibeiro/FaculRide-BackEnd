@@ -1,4 +1,5 @@
 import {
+  CompleteMultipartUploadCommandOutput,
   GetObjectCommand,
   ListObjectsV2Command,
   NoSuchKey,
@@ -12,7 +13,7 @@ export const s3 = new S3Client({
 import { Upload } from "@aws-sdk/lib-storage";
 import e from "express";
 
-export async function uploadArquivoS3(file: Express.Multer.File) {
+export async function uploadArquivoS3(file: Express.Multer.File): Promise<CompleteMultipartUploadCommandOutput |  undefined> {
   const upload = new Upload({
     client: s3,
     params: {
@@ -21,6 +22,7 @@ export async function uploadArquivoS3(file: Express.Multer.File) {
       Body: file.buffer,
       ContentType: file.mimetype,
       ACL: "public-read",
+      
     },
 
     queueSize: 4, // uploads paralelos

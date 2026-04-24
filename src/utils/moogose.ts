@@ -17,19 +17,20 @@ mongoose.connection.on("connected", () => {
 
 const s3ObjectSchema = new mongoose.Schema({
     idUsuario: { type: Number, required: true },
-    key: { type: String, required: true },
+    etag: { type: String, required: true },
     minytype: { type: String, required: true },
 });
 
 const S3Object = mongoose.model("S3Object", s3ObjectSchema);
 
-async function insertS3(id:number,key:string,minytype:string) {
+export async function insertS3(id:number,etag:string,minytype:string): Promise<boolean> {
     const s3Object = new S3Object({
         idUsuario: id,
-        key: key,
+        etag: etag,
         minytype: minytype,
     });
-    await s3Object.save();
+    const savedS3Object = await s3Object.save();
+    return savedS3Object === savedS3Object 
 }
 
 async function findS3ById(id:number,minytype:string) {

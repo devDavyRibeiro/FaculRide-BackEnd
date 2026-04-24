@@ -13,6 +13,7 @@ import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
 import {s3, uploadArquivoS3} from '../utils/s3Client'
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { insertS3 } from "../utils/moogose";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
@@ -321,11 +322,12 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
 // Upload de foto (multipart 'file')
 export const uploadFotoUsuario = async (req: Request, res: Response) => {
   try {
+    
     const userCtx = (req as any).user;
     const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
-    // if (!idUsuario) {
-    //   return res.status(401).json({ erro: "Usuário não autenticado" });
-    // }
+    if (!idUsuario) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
 
     const file = (req as any).file as { buffer: Buffer; mimetype: string; size: number; originalname: string } | undefined;
     if (!file) {
@@ -333,7 +335,16 @@ export const uploadFotoUsuario = async (req: Request, res: Response) => {
     }
 
     const aws =  await uploadArquivoS3(req.file!);
-    //console.log("Upload AWS S3 concluído:", aws);
+    if(!aws) {      
+      return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
+    }
+
+    const s3Inserted = await insertS3(idUsuario, aws.ETag!, file.mimetype);
+    if (!s3Inserted) {
+      return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
+    }
+    console.log("Upload AWS S3 concluído:", s3Inserted);
+    // a partir daqui é upload no supabase
     const mime = file.mimetype;
     const allow = ["image/jpeg", "image/png", "image/webp"];
     if (!allow.includes(mime)) {
@@ -369,7 +380,8 @@ export const uploadFotoUsuario = async (req: Request, res: Response) => {
     return res.status(200).json({
       mensagem: "Foto enviada e usuário atualizado com sucesso",
       fotoUrl,
-      fotoPath: filePath
+      fotoPath: filePath,
+      url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`
     });
   } catch (error: any) {
     console.error("uploadFotoUsuario:", error);
