@@ -37,6 +37,7 @@
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/mercadopago": "^1.5.11",
     "@types/multer": "^2.0.0",
     "@types/node": "^22.15.23",
     "@types/nodemailer": "^7.0.2",
