@@ -133,7 +133,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:production-${{ steps.version.outputs.new_version }}
+          tags: | 
+            ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:production-${{ steps.version.outputs.new_version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:production-latest
 
   notify_failure:
     name: Notificar Falha
