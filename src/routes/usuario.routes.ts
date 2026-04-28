@@ -8,7 +8,7 @@ import {
   deletarUsuario,
   atualizarFotoUsuario,
   // >>> NOVO IMPORT
-  uploadFotoUsuario
+  cadastrarFotoUsuario
 } from "../controllers/usuario.controller";
 import { Iusuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { AuthorizeMiddleware } from "../middlewares/authorize.middleware";
@@ -76,7 +76,7 @@ router.patch("/foto", (req, res) => {
 // >>> NOVA ROTA PROTEGIDA — upload multipart da foto + atualização automática no usuário
 // Body: multipart/form-data com campo "file"
 router.post("/foto/upload", upload.single("file"), (req, res) => {
-  uploadFotoUsuario(req, res);
+  cadastrarFotoUsuario(req, res);
 });
 
 export default router;
