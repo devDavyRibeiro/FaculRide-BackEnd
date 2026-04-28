@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { listAll, create, update, remove } from "../controllers/viagem.controller";
+import { listAll, create, update, remove, cancelarViagem } from "../controllers/viagem.controller";
 import { AuthorizeMiddleware } from "../middlewares/authorize.middleware";
 
 const router = express.Router();
@@ -47,6 +47,11 @@ router.put("/:id", (req: Request, res: Response) => {
     .catch(error =>
       res.status(500).json({ erro: error.message || "Erro ao atualizar viagem" })
     );
+});
+
+// Cancelar viagem
+router.patch("/:id/cancelar", (req: Request, res: Response) => {
+  cancelarViagem(req, res);
 });
 
 // DELETE viagem

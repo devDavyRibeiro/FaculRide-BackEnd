@@ -3,6 +3,7 @@ node_modules/
 
 # Variáveis de ambiente
 .env
+.env.rds
 
 # Logs e arquivos temporários
 *.log

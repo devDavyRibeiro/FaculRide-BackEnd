@@ -30,6 +30,10 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
+      ID_Viagem: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+      },
       Comentario: {
         type: Sequelize.STRING(100),
         allowNull: false
