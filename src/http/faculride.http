@@ -1,0 +1,170 @@
+// ======================= CONFIGURAÇÕES =========================
+// Utilize a extensão REST Client para testar os endpoints da sua API.
+// Realize o login para gerar o token JWT e copie-o abaixo.
+// O token será utilizado automaticamente nas requisições que exigem autenticação.
+// Para testar a rota CRIA AVALIAÇÃO, deverá ter 2 usuário (id:1 e id:2).
+
+// Cole seu token JWT aqui:
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibm9tZSI6Ikhlcml2ZWx0b24iLCJ0aXBvVXN1YXJpbyI6Im1vdG9yaXN0YSIsImlhdCI6MTc1MDQ3MzQxNSwiZXhwIjoxNzUwNTU5ODE1fQ.jzDqLCrh7J4OzYQhvpEtCXIew3moOzwOtBCkbcLEXFk
+
+
+// AUTENTICAÇÃO 
+
+### LOGIN (gerar token)
+POST http://localhost:3000/api/usuario/login
+Content-Type: application/json
+
+{
+  "email": "herivelton02@gmail.com",
+  "senha": "Abc123!"
+}
+
+
+// USUÁRIOS
+
+### LISTAR TODOS OS USUÁRIOS
+GET http://localhost:3000/api/usuario
+Authorization: Bearer {{token}}
+
+### BUSCAR USUÁRIO POR ID
+GET http://localhost:3000/api/usuario/1
+Authorization: Bearer {{token}}
+
+### CADASTRAR USUÁRIO (Rota pública)
+POST http://localhost:3000/api/auth
+Content-Type: application/json
+
+{
+  "nome": "Herivelton",
+  "email": "herivelton02@gmail.com",
+  "senha": "Abc123!",
+  "telefone": "15991697891",
+  "cpf": "40560741863",
+  "cep": "18111461",
+  "endereco": "Avenida Philomena Lopes Vasques",
+  "numero": "314",
+  "cidade": "Votorantim",
+  "estado": "SP",
+  "fatec": "Fatec Votorantim",
+  "ra": "3011392413011",
+  "genero": true,
+  "dataNascimento": "1991-12-23",
+  "tipoUsuario": "motorista",
+  "cnh": "05445997408",
+  "veiculo": {
+    "Placa_veiculo": "EFR1F89",
+    "Cor": "Preto",
+    "Modelo": "Fox",
+    "Ano": 2010
+  }
+}
+
+### ATUALIZAR USUÁRIO
+PUT http://localhost:3000/api/usuario/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "telefone": "11988888888",
+  "cidade": "Votorantim"
+}
+
+### DELETAR USUÁRIO
+DELETE http://localhost:3000/api/usuario/1
+Authorization: Bearer {{token}}
+
+
+// VEÍCULOS 
+
+### LISTAR TODOS OS VEÍCULOS
+GET http://localhost:3000/api/veiculo
+Authorization: Bearer {{token}}
+
+### CADASTRAR VEÍCULO
+POST http://localhost:3000/api/veiculo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "Placa_veiculo": "DEF5678",
+  "Cor": "Branco",
+  "Modelo": "Civic",
+  "Ano": 2021,
+  "idUsuario": 1
+}
+
+### ATUALIZAR VEÍCULO
+PUT http://localhost:3000/api/veiculo/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "Modelo": "Civic Touring",
+  "Cor": "Prata"
+}
+
+### DELETAR VEÍCULO
+DELETE http://localhost:3000/api/veiculo/2
+Authorization: Bearer {{token}}
+
+
+// VIAGENS 
+
+### CRIAR VIAGEM
+POST http://localhost:3000/api/viagem
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tipoUsuario": "motorista",
+  "partida": "Fatec",
+  "destino": "Centro",
+  "horarioEntrada": "18:00",
+  "horarioSaida": "22:00",
+  "ajudaDeCusto": "15",
+  "idUsuario": 1
+}
+
+### LISTAR VIAGENS
+GET http://localhost:3000/api/viagem
+Authorization: Bearer {{token}}
+
+### DELETAR VIAGEM
+DELETE http://localhost:3000/api/viagem/1
+Authorization: Bearer {{token}}
+
+
+// AVALIAÇÕES
+
+### CRIAR AVALIAÇÃO
+POST http://localhost:3000/api/avaliacao
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ID_Avaliador": 1,
+  "ID_Avaliado": 2,
+  "Comentario": "Ótimo motorista",
+  "Estrelas": 5
+}
+
+### LISTAR AVALIAÇÕES
+GET http://localhost:3000/api/avaliacao
+Authorization: Bearer {{token}}
+
+
+// LOG DE ACESSO
+
+### LISTAR LOGS DE ACESSO
+GET http://localhost:3000/api/logacesso
+Authorization: Bearer {{token}}
+
+### CRIAR LOG
+POST http://localhost:3000/api/logacesso
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "acao": "Login",
+  "descricao": "Usuário realizou login"
+}

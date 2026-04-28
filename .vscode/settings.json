@@ -1,0 +1,19 @@
+{
+    "sqltools.connections": [
+        {
+            "pgOptions": {
+                "ssl": {
+                    "rejectUnauthorized": false
+                }
+            },
+            "previewLimit": 50,
+            "server": "db.qnftaibaldiiszccfjlu.supabase.co",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "FaculRide",
+            "database": "postgres",
+            "username": "postgres",
+            "password": "FaculRide1!"
+        }
+    ]
+}
