@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: banco
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: faculride
+    ports:
+      - "5432:5432"
+
