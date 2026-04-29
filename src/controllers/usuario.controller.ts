@@ -120,6 +120,20 @@ export const filtrarUsuarios = async (filtros: IusuarioFiltros): Promise<Iusuari
       ...(filtros.tipoUsuario && { tipoUsuario: filtros.tipoUsuario }),
     },
   });
+  usuarios.forEach(usuario => {
+    getFotoByUsuarioId(usuario.idUsuario)
+    .then(url => {    
+      //console.log(`Foto do usuário ${usuario.idUsuario} encontrada: ${url}`);
+      usuario.fotoUrl = url;
+    }) 
+    .catch(err => {
+      usuario.fotoUrl = null;
+    });
+  });
+
+  usuarios.forEach(usuario => {
+    console.log(`Usuário ${usuario.idUsuario} - Foto URL: ${usuario.fotoUrl}`);
+  });
   return usuarios;
 };
 
@@ -213,15 +227,7 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
     const veiculo = await VeiculoModel.findOne({
       where: { idUsuario: usuario.idUsuario },
     });
-    const s3Object = await findS3ById(usuario.idUsuario,"image/jpeg") || await findS3ById(usuario.idUsuario,"image/png") || await findS3ById(usuario.idUsuario,"image/webp");
-    if(s3Object) {
-      const fileS3 = await getArquivoS3byID(s3Object.etag);
-      if (fileS3) {
-        fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
-      } else {
-        fotoUrl = null
-      }
-    }
+    fotoUrl = await getFotoByUsuarioId(usuario.idUsuario);
     return res.status(200).json({
       id: usuario.idUsuario,
       nome: usuario.nome,
@@ -395,3 +401,17 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
     return res.status(500).json({ erro: error.message || "Erro ao enviar foto" });
   }
 };
+
+const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => {
+    const s3Object = await findS3ById(idUsuario,"image/jpeg") || await findS3ById(idUsuario,"image/png") || await findS3ById(idUsuario,"image/webp");
+    let fotoUrl: string | null = "";
+    if(s3Object) {
+      const fileS3 = await getArquivoS3byID(s3Object.etag);
+      if (fileS3) {
+        fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
+      } else {
+        fotoUrl = null
+      }
+    }
+    return fotoUrl;
+}
