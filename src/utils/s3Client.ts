@@ -1,4 +1,5 @@
 import {
+  _Object,
   CompleteMultipartUploadCommandOutput,
   GetObjectCommand,
   ListObjectsV2Command,
@@ -51,23 +52,53 @@ export async function uploadArquivoS3(file: Express.Multer.File): Promise<Comple
 //   return result;
 // }
 
-export async function getArquivoS3() {
-  const params = {
-    Bucket: process.env.BUCKET_NAME!,
-    // Prefix: "pasta/", // Opcional: filtrar por pasta/prefixo
-  };
+export async function getArquivoS3byID(etag: string):Promise<_Object | null> {
+  // Garante que a ETag buscada tenha aspas, como o S3 retorna
+  const formattedEtag = etag.startsWith('"') ? etag : `"${etag}"`;
+  
+  let isTruncated = true;
+  let continuationToken = undefined;
+  let foundObject = null;
+
+  console.log(`Iniciando busca pela ETag: ${formattedEtag}...`);
 
   try {
-    // Enviar o comando
-    const data = await s3.send(new ListObjectsV2Command(params));
-    
-    // Processar e exibir os resultados
-    console.log("Objetos encontrados:");
-    data.Contents?.forEach((object) => {
-      console.log(` - ${object.Key} (${object.Size} bytes)`);
-    });
-    return data.Contents;
-  } catch (err) {
-    console.error("Erro ao listar objetos:", err);
+    while (isTruncated) {
+      const command: ListObjectsV2Command = new ListObjectsV2Command({
+        Bucket: process.env.BUCKET_NAME!,
+        ContinuationToken: continuationToken,
+        // MaxKeys: 1000 // Padrão é 1000, ideal para buscas grandes
+      });
+
+      const response = await s3.send(command);
+
+      // Procura na página atual
+      foundObject = response.Contents?.find(obj => obj.ETag === formattedEtag);
+
+      if (foundObject) {
+        console.log("✅ Objeto encontrado!");
+        console.log(`Key: ${foundObject.Key}`);
+        console.log(`Tamanho: ${foundObject.Size} bytes`);
+        break; // Interrompe o loop se achar
+      }
+
+      // Prepara para a próxima página
+      isTruncated = response.IsTruncated ?? false;
+      continuationToken = response?.NextContinuationToken;
+
+      if (isTruncated) {
+        console.log("Buscando na próxima página de objetos...");
+      }
+    }
+
+    if (!foundObject) {
+      return null; // Retorna null se não encontrar o objeto
+    }
+
+    return foundObject;
+
+  } catch (error) {
+    console.error("Erro ao listar objetos:", error);
+    throw error;
   }
 }

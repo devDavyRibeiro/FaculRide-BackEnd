@@ -10,7 +10,7 @@ dotenv.config();
 const router = Router();
 
 router.get('/', async (req:Request, res:Response) => {
-  const response = await getArquivoS3();
+  const response = await getArquivoS3('487a96b01acae527c51aaa9f1112c9f1');
   res.json({ message: 'Teste de rota funcionando!', response });
 });
 export default router;

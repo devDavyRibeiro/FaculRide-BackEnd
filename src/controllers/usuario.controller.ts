@@ -11,9 +11,9 @@ import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
-import {s3, uploadArquivoS3} from '../utils/s3Client'
+import {s3, uploadArquivoS3,getArquivoS3byID} from '../utils/s3Client'
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { insertS3 } from "../utils/moogose";
+import { insertS3,findS3ById} from "../utils/moogose";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
@@ -201,6 +201,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
 // Buscar usuário por ID
 export const buscarUsuarioPorId = async (req: Request, res: Response) => {
   const { id } = req.params;
+  let fotoUrl: string | null = "";
 
   try {
     const usuario = await UsuarioModel.findByPk(id);
@@ -212,7 +213,15 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
     const veiculo = await VeiculoModel.findOne({
       where: { idUsuario: usuario.idUsuario },
     });
-
+    const s3Object = await findS3ById(usuario.idUsuario,"image/jpeg") || await findS3ById(usuario.idUsuario,"image/png") || await findS3ById(usuario.idUsuario,"image/webp");
+    if(s3Object) {
+      const fileS3 = await getArquivoS3byID(s3Object.etag);
+      if (fileS3) {
+        fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
+      } else {
+        fotoUrl = null
+      }
+    }
     return res.status(200).json({
       id: usuario.idUsuario,
       nome: usuario.nome,
@@ -229,7 +238,7 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
       genero: usuario.genero,
       dataNascimento: usuario.dataNascimento,
       tipoUsuario: usuario.tipoUsuario,
-      fotoUrl: usuario.fotoUrl ?? null,
+      fotoUrl: fotoUrl,
       fotoPath: usuario.fotoPath ?? null,
       veiculo: veiculo ? veiculo.toJSON() : null,
     });

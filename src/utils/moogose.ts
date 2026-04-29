@@ -33,7 +33,7 @@ export async function insertS3(id:number,etag:string,minytype:string): Promise<b
     return savedS3Object === savedS3Object 
 }
 
-async function findS3ById(id:number,minytype:string) {
+export async function findS3ById(id:number,minytype:string) {
     const s3Object = await S3Object.findOne({ idUsuario: id, minytype: minytype });
     return s3Object;
 }
