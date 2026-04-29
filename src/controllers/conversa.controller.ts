@@ -188,7 +188,7 @@ export const listarMinhasConversas = async (req: Request, res: Response) => {
 // ================= LISTAR MENSAGENS =================
 export const listarMensagens = async (req: Request, res: Response) => {
   try {
-    const { idConversa } = req.params;
+    const idConversa = Number(req.params.idConversa);
 
     const mensagens = await MensagemConversaModel.findAll({
       where: { idConversa },
@@ -260,7 +260,7 @@ export const aceitarCarona = async (req: Request, res: Response) => {
     const user = (req as any).user;
     const idUsuario = user?.id ?? user?.idUsuario;
 
-    const { idConversa } = req.params;
+    const idConversa = Number(req.params.idConversa);
 
     const conversa = await ConversaCaronaModel.findByPk(idConversa);
 
@@ -321,7 +321,7 @@ export const aceitarCarona = async (req: Request, res: Response) => {
 // ================= RECUSAR CARONA =================
 export const recusarCarona = async (req: Request, res: Response) => {
   try {
-    const { idConversa } = req.params;
+    const idConversa = Number(req.params.idConversa);
 
     const conversa = await ConversaCaronaModel.findByPk(idConversa);
 

@@ -198,7 +198,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
 
 // Buscar usuário por ID
 export const buscarUsuarioPorId = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
 
   try {
     const usuario = await UsuarioModel.findByPk(id);
@@ -241,7 +241,7 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
 
 // Atualizar dados do usuário
 export const atualizarUsuario = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
   const dados = req.body as Iusuario;
 
   try {
@@ -263,7 +263,7 @@ export const atualizarUsuario = async (req: Request, res: Response) => {
 
 // Deletar usuário e seus veículos
 export const deletarUsuario = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
 
   try {
     const usuario = await UsuarioModel.findByPk(id);
