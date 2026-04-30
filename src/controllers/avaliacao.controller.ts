@@ -1,6 +1,6 @@
 import { AvaliacaoModel } from "../models/avaliacao.model";
 import { IAvaliacao } from "../interfaces/Iavaliacao";
-import { notifyUser } from "../utils/notifyUser"; 
+import { notifyUser } from "../utils/notifyUser";
 
 // Listar todas as avaliações
 export const listAll = async (): Promise<IAvaliacao[]> => {
@@ -9,6 +9,10 @@ export const listAll = async (): Promise<IAvaliacao[]> => {
 
 // Criar nova avaliação
 export const create = async (dados: IAvaliacao): Promise<IAvaliacao> => {
+  if (!dados.ID_Avaliador || !dados.ID_Avaliado || !dados.ID_Viagem) {
+    throw new Error("ID_Avaliador, ID_Avaliado e ID_Viagem são obrigatórios.");
+  }
+
   if (!dados.Comentario || dados.Comentario.trim().length < 3) {
     throw new Error("O comentário deve conter pelo menos 3 caracteres.");
   }
@@ -21,9 +25,19 @@ export const create = async (dados: IAvaliacao): Promise<IAvaliacao> => {
     throw new Error("As estrelas devem ser um número entre 1 e 5.");
   }
 
+  const avaliacaoExistente = await AvaliacaoModel.findOne({
+    where: {
+      ID_Avaliador: dados.ID_Avaliador,
+      ID_Viagem: dados.ID_Viagem,
+    },
+  });
+
+  if (avaliacaoExistente) {
+    throw new Error("Esta viagem já foi avaliada por este usuário.");
+  }
+
   const nova = await AvaliacaoModel.create(dados);
 
-  // Dispara notificação para o usuário avaliado (sem travar o fluxo se der erro)
   try {
     if (dados.ID_Avaliado) {
       await notifyUser({
@@ -37,6 +51,7 @@ export const create = async (dados: IAvaliacao): Promise<IAvaliacao> => {
             (nova as any).id ??
             undefined,
           avaliadorId: dados.ID_Avaliador,
+          viagemId: dados.ID_Viagem,
         },
       });
     }

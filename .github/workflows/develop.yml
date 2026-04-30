@@ -274,7 +274,9 @@ jobs:
 
           push: true
 
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:development
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:development-${{ steps.version.outputs.new_version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:development-latest
 
   notify_failure:
 

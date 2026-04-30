@@ -13,6 +13,9 @@ export class ViagemModel extends Model<Iviagem, ViagemCreationAttributes> implem
   public horarioSaida!: string;
   public ajudaDeCusto!: string;
   public idUsuario!: number;
+  public cancelada!: boolean;
+  public canceladaPor!: number | null;
+  public dataCancelamento!: Date | null;
 }
 
 ViagemModel.init(
@@ -56,6 +59,26 @@ ViagemModel.init(
       },
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE'
+    },
+
+    cancelada: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    canceladaPor: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'usuario',
+        key: 'idUsuario'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
+    },
+    dataCancelamento: {
+      type: DataTypes.DATE,
+      allowNull: true,
     }
   },
   {
