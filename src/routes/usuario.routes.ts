@@ -7,17 +7,16 @@ import {
   atualizarUsuario,
   deletarUsuario,
   atualizarFotoUsuario,
-  // >>> NOVO IMPORT
-  uploadFotoUsuario
+  cadastrarFotoUsuario,
+  alterarSenha
 } from "../controllers/usuario.controller";
 import { Iusuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { AuthorizeMiddleware } from "../middlewares/authorize.middleware";
 
-// >>> NOVO: multer para receber o arquivo (em memória) no upload
 import multer from "multer";
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 const router = express.Router();
@@ -30,7 +29,7 @@ router.post("/", async (req, res) => {
     const resposta = await cadastrarUsuario(usuario);
     res.status(201).json(resposta);
   } catch (error: any) {
-    res.status(400).json({ erro: error.message || "Erro ao cadastrar usuário" });
+    res.status(400).json({ erro: error.message || "Erro ao cadastrar usuário " + error });
   }
 });
 
@@ -41,10 +40,9 @@ router.post("/login", (req, res) => {
 // A partir daqui todas as rotas são protegidas
 router.use(AuthorizeMiddleware as any);
 
-// GET Listar ou filtrar usuários 
+// GET Listar ou filtrar usuários
 router.get("/", async (req, res) => {
   const filtros = req.query as unknown as IusuarioFiltros;
-
   try {
     const resposta = await filtrarUsuarios(filtros);
     res.status(200).json(resposta);
@@ -53,30 +51,34 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET Buscar usuário por ID 
+// GET Buscar usuário por ID
 router.get("/:id", (req, res) => {
   buscarUsuarioPorId(req, res);
 });
 
-// PUT Atualizar dados do usuário 
+// ROTA PROTEGIDA — alterar senha do usuário autenticado
+router.put("/alterar-senha", (req, res) => {
+  alterarSenha(req, res);
+});
+
+// PUT Atualizar dados do usuário
 router.put("/:id", (req, res) => {
   atualizarUsuario(req, res);
 });
 
-// DELETE usuário 
+// DELETE usuário
 router.delete("/:id", (req, res) => {
   deletarUsuario(req, res);
 });
 
-// >>> ROTA PROTEGIDA — atualiza SOMENTE fotoUrl/fotoPath do usuário autenticado (JSON)
+// ROTA PROTEGIDA — atualiza SOMENTE fotoUrl/fotoPath do usuário autenticado (JSON)
 router.patch("/foto", (req, res) => {
   atualizarFotoUsuario(req, res);
 });
 
-// >>> NOVA ROTA PROTEGIDA — upload multipart da foto + atualização automática no usuário
-// Body: multipart/form-data com campo "file"
+// NOVA ROTA PROTEGIDA — upload multipart da foto + atualização automática no usuário
 router.post("/foto/upload", upload.single("file"), (req, res) => {
-  uploadFotoUsuario(req, res);
+  cadastrarFotoUsuario(req, res);
 });
 
 export default router;
