@@ -120,20 +120,11 @@ export const filtrarUsuarios = async (filtros: IusuarioFiltros): Promise<Iusuari
       ...(filtros.tipoUsuario && { tipoUsuario: filtros.tipoUsuario }),
     },
   });
-  usuarios.forEach(usuario => {
-    getFotoByUsuarioId(usuario.idUsuario)
-    .then(url => {    
-      //console.log(`Foto do usuário ${usuario.idUsuario} encontrada: ${url}`);
-      usuario.fotoUrl = url;
-    }) 
-    .catch(err => {
-      usuario.fotoUrl = null;
-    });
-  });
-
-  usuarios.forEach(usuario => {
-    console.log(`Usuário ${usuario.idUsuario} - Foto URL: ${usuario.fotoUrl}`);
-  });
+  await Promise.all(
+    usuarios.map(async (usuario) => {
+      const fotoUrl = await getFotoByUsuarioId(usuario.idUsuario);
+      usuario.setDataValue('fotoUrl', fotoUrl);
+    }));
   return usuarios;
 };
 

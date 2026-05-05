@@ -44,7 +44,7 @@ router.use(AuthorizeMiddleware as any);
 // GET Listar ou filtrar usuários 
 router.get("/", async (req, res) => {
   const filtros = req.query as unknown as IusuarioFiltros;
-
+console.log("Filtros recebidos:", filtros);
   try {
     const resposta = await filtrarUsuarios(filtros);
     res.status(200).json(resposta);
