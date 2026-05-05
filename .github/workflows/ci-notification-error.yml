@@ -1,0 +1,29 @@
+name: Failure Notification
+
+on:
+  workflow_run:
+    workflows: ["Docker Build - Production", "Docker Build - Development"]
+    types:
+      - completed
+
+jobs:
+  on-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Enviar E-mail de Alerta
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "🚨 Falha na Pipeline: ${{ github.event.workflow_run.name }}"
+          to: "${{ secrets.TEAM_EMAILS }}"
+          from: GitHub Actions
+          html_body: |
+            <h2>Ocorreu um erro na sua pipeline!</h2>
+            <p><strong>Workflow:</strong> ${{ github.event.workflow_run.name }}</p>
+            <p><strong>Branch:</strong> ${{ github.event.workflow_run.head_branch }}</p>
+            <p><strong>Commit:</strong> ${{ github.event.workflow_run.head_sha }}</p>
+            <a href="${{ github.event.workflow_run.html_url }}">Clique aqui para ver os logs do erro</a>
