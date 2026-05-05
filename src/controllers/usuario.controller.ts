@@ -11,8 +11,7 @@ import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
-import {s3, uploadArquivoS3,getArquivoS3byID} from '../utils/s3Client'
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import {uploadArquivoS3,getArquivoS3byID} from '../utils/s3Client'
 import { insertS3,findS3ById} from "../utils/moogose";
 
 // Validação de senha forte
