@@ -1,7 +1,6 @@
 const path = require("path");
 
 module.exports = {
-  // point to JS file so it can read environment variables
   config: path.resolve("config", "config.json"),
   "models-path": path.resolve("src", "models"),
   "migrations-path": path.resolve("src", "database", "migrations"),

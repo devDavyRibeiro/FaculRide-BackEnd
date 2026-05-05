@@ -4,10 +4,14 @@ import { IAvaliacao } from "../interfaces/Iavaliacao";
 
 type AvaliacaoCreationAttributes = Optional<IAvaliacao, "ID_Avaliacao">;
 
-export class AvaliacaoModel extends Model<IAvaliacao, AvaliacaoCreationAttributes> implements IAvaliacao {
+export class AvaliacaoModel
+  extends Model<IAvaliacao, AvaliacaoCreationAttributes>
+  implements IAvaliacao
+{
   public ID_Avaliacao!: number;
   public ID_Avaliador!: number;
   public ID_Avaliado!: number;
+  public ID_Viagem!: number;
   public Comentario!: string;
   public Estrelas!: number;
 }
@@ -26,8 +30,8 @@ AvaliacaoModel.init(
       allowNull: false,
       field: "ID_Avaliador",
       references: {
-        model: 'usuario',   
-        key: 'idUsuario'    
+        model: "usuario",
+        key: "idUsuario"
       }
     },
     ID_Avaliado: {
@@ -35,9 +39,14 @@ AvaliacaoModel.init(
       allowNull: false,
       field: "ID_Avaliado",
       references: {
-        model: 'usuario',   
-        key: 'idUsuario'    
+        model: "usuario",
+        key: "idUsuario"
       }
+    },
+    ID_Viagem: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: "ID_Viagem"
     },
     Comentario: {
       type: DataTypes.STRING(255),

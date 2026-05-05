@@ -38,11 +38,32 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'usuario', 
+          model: 'usuario',
           key: 'idUsuario'
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
+      },
+
+      // CANCELAMENTO
+      cancelada: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      canceladaPor: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'usuario',
+          key: 'idUsuario'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+      dataCancelamento: {
+        type: Sequelize.DATE,
+        allowNull: true
       }
     });
   },

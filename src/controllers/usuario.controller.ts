@@ -191,6 +191,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
         genero: usuario.genero,
         dataNascimento: usuario.dataNascimento,
         tipoUsuario: usuario.tipoUsuario,
+        cnh: usuario.cnh ?? null,
         fotoUrl: usuario.fotoUrl ?? null,
         fotoPath: usuario.fotoPath ?? null,
         veiculo: veiculo ? veiculo.toJSON() : null
@@ -205,7 +206,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
 
 // Buscar usuário por ID
 export const buscarUsuarioPorId = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
   let fotoUrl: string | null = "";
 
   try {
@@ -235,6 +236,7 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
       genero: usuario.genero,
       dataNascimento: usuario.dataNascimento,
       tipoUsuario: usuario.tipoUsuario,
+      cnh: usuario.cnh ?? null,
       fotoUrl: fotoUrl,
       fotoPath: usuario.fotoPath ?? null,
       veiculo: veiculo ? veiculo.toJSON() : null,
@@ -248,7 +250,7 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
 
 // Atualizar dados do usuário
 export const atualizarUsuario = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
   const dados = req.body as Iusuario;
 
   try {
@@ -270,7 +272,7 @@ export const atualizarUsuario = async (req: Request, res: Response) => {
 
 // Deletar usuário e seus veículos
 export const deletarUsuario = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
 
   try {
     const usuario = await UsuarioModel.findByPk(id);
@@ -374,3 +376,56 @@ const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => 
     }
     return fotoUrl;
 }
+
+// Alterar senha do usuário autenticado
+export const alterarSenha = async (req: Request, res: Response) => {
+  try {
+    const userCtx = (req as any).user;
+    const idUsuario = userCtx?.id ?? userCtx?.idUsuario;
+
+    const { senhaAtual, novaSenha, confirmarSenha } = req.body;
+
+    if (!idUsuario) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
+
+    if (!senhaAtual || !novaSenha || !confirmarSenha) {
+      return res.status(400).json({
+        erro: "Preencha senhaAtual, novaSenha e confirmarSenha",
+      });
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      return res.status(400).json({
+        erro: "Confirmação de senha não confere",
+      });
+    }
+
+    const usuario = await UsuarioModel.findByPk(idUsuario);
+
+    if (!usuario) {
+      return res.status(404).json({ erro: "Usuário não encontrado" });
+    }
+
+    const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
+
+    if (!senhaValida) {
+      return res.status(401).json({ erro: "Senha atual incorreta" });
+    }
+
+    validarSenha(novaSenha);
+
+    const novaSenhaHash = await bcrypt.hash(novaSenha, 10);
+
+    await usuario.update({ senha: novaSenhaHash });
+
+    return res.status(200).json({
+      mensagem: "Senha alterada com sucesso",
+    });
+  } catch (error: any) {
+    console.error("Erro ao alterar senha:", error);
+    return res.status(500).json({
+      erro: error.message || "Erro ao alterar senha",
+    });
+  }
+};
