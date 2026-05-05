@@ -359,38 +359,6 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
       return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
     }
     console.log("Upload AWS S3 concluído:", s3Inserted);
-    // a partir daqui é upload no supabase
-    // const mime = file.mimetype;
-    // const allow = ["image/jpeg", "image/png", "image/webp"];
-    // if (!allow.includes(mime)) {
-    //   return res.status(400).json({ erro: "Tipo inválido. Use JPEG, PNG ou WEBP." });
-    // }
-    // if (file.size > 5 * 1024 * 1024) { // 5MB
-    //   return res.status(400).json({ erro: "Arquivo muito grande (máx. 5MB)." });
-    // }
-    
-    // const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
-
-    // const bucket = process.env.SUPABASE_BUCKET || "faculride";
-    // const filePath = `${idUsuario}/profile.${ext}`;
-    
-    // const { error: upErr } = await supabaseAdmin
-    // .storage.from(bucket)
-    // .upload(filePath, file.buffer, { contentType: mime, upsert: true });
-    
-    // if (upErr) {
-    //   console.error("Erro no upload Supabase:", upErr);
-    //   return res.status(500).json({ erro: "Falha ao enviar arquivo ao Storage" });
-    // }
-
-    
-    // const { data: pub } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
-    // const fotoUrl = pub?.publicUrl ?? null;
-
-    // const usuario = await UsuarioModel.findByPk(idUsuario);
-    // if (!usuario) return res.status(404).json({ erro: "Usuário não encontrado" });
-
-    // await usuario.update({ fotoUrl, fotoPath: filePath });
 
     return res.status(200).json({
       mensagem: "Foto enviada e usuário atualizado com sucesso",

@@ -1,12 +1,13 @@
 import { IdPInfo } from './../../node_modules/mongodb/src/cmap/auth/mongodb_oidc';
 import { S3 } from "@aws-sdk/client-s3";
 import mongoose from "mongoose";
+import { env } from 'process';
 
 
 main().catch(err => console.log(err));
 
 async function main() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/test');
+  await mongoose.connect(env.MONGODB_URI!);
 
   // use `await mongoose.connect('mongodb://user:password@127.0.0.1:27017/test');` if your database has auth enabled
 }

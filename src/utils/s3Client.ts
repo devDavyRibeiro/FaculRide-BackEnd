@@ -10,9 +10,9 @@ import {
 export const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    sessionToken: process.env.AWS_SESSION_TOKEN!,
+    accessKeyId: process.env.aws_access_key_id!,
+    secretAccessKey: process.env.aws_secret_access_key!,
+    sessionToken: process.env.aws_session_token!,
   },
 });
 
@@ -52,13 +52,13 @@ export async function uploadArquivoS3(file: Express.Multer.File): Promise<Comple
 //   return result;
 // }
 
-export async function getArquivoS3byID(etag: string):Promise<_Object | null> {
+export async function getArquivoS3byID(etag: string):Promise<_Object | undefined> {
   // Garante que a ETag buscada tenha aspas, como o S3 retorna
   const formattedEtag = etag.startsWith('"') ? etag : `"${etag}"`;
   
-  let isTruncated = true;
-  let continuationToken = undefined;
-  let foundObject = null;
+  let isTruncated:boolean = true;
+  let continuationToken: string | undefined = undefined;
+  let foundObject: _Object | undefined = undefined;
 
   console.log(`Iniciando busca pela ETag: ${formattedEtag}...`);
 
@@ -92,7 +92,7 @@ export async function getArquivoS3byID(etag: string):Promise<_Object | null> {
     }
 
     if (!foundObject) {
-      return null; // Retorna null se não encontrar o objeto
+      return undefined; // Retorna undefined se não encontrar o objeto
     }
 
     return foundObject;
