@@ -2,6 +2,7 @@
 FROM node:22 as build
 WORKDIR /app
 
+COPY .env ./
 COPY package*.json ./
 RUN npm install
 
