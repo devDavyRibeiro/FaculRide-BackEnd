@@ -38,6 +38,7 @@
     "tar": "^7.5.13"
   },
   "devDependencies": {
+    "@types/aws-sdk": "^0.0.42",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
