@@ -1,22 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "ES2023",          // Alinhado com o MongoDB
+    "lib": ["ES2023", "DOM"],    // Adiciona suporte às bibliotecas de 2023
     "module": "nodenext",
+    "moduleResolution": "nodenext",
     "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
-    "moduleResolution": "nodenext",
-    "resolveJsonModule": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "lib": ["ES2020", "DOM"],
+    "skipLibCheck": true         // Mantém isso para ignorar avisos menores
   },
   "include": ["src"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }
-
-
-
-
-
