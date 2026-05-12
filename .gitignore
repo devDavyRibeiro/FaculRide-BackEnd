@@ -1,6 +1,8 @@
 # Dependências
 node_modules/
 
+.vscode/
+
 # Variáveis de ambiente
 .env
 .env.rds
