@@ -1,20 +1,21 @@
 import mongoose from "mongoose";
 import { env } from 'process';
-import { getEc2Dns } from "./ec2";
 
 
 main().catch(err => console.log(err));
 
 async function main() {
-    const dns = await getEc2Dns();
-    if(!dns) {
-        return Promise.reject("❌ Não foi possível obter o DNS da EC2. Verifique os logs anteriores.");
-    }
-    if(!env.MONGODB_URI_USER || !env.MONGODB_URI_END) {
+    let mongoUri:string
+    if(!env.MONGODB_URI_USER || !env.MONGODB_URI_END || !env.MONGODB_HOST_DEV || !env.MONGODB_HOST_PROD) {
         return Promise.reject("❌ MONGODB_URI_USER ou MONGODB_URI_END não definidos no .env");
     }
-    const mongoUri = env.MONGODB_URI_USER! + dns + env.MONGODB_URI_END;
-    console.log(`🔗 Conectando ao MongoDB em: ${mongoUri}`);
+    if(env.NODE_ENV === "dev") {
+        mongoUri = `${env.MONGODB_URI_USER}${env.MONGODB_HOST_DEV}${env.MONGODB_URI_END}`;
+        console.log(`🔗 Conectando ao MongoDB em: ${mongoUri}`);
+    } else {
+        mongoUri = `${env.MONGODB_URI_USER}${env.MONGODB_HOST_PROD}${env.MONGODB_URI_END}`;
+        console.log(`🔗 Conectando ao MongoDB em: ${mongoUri}`);
+    }
     await mongoose.connect(mongoUri);
 
   // use `await mongoose.connect('mongodb://user:password@127.0.0.1:27017/test');` if your database has auth enabled
