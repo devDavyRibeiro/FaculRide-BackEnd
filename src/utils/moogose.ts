@@ -27,24 +27,29 @@ mongoose.connection.on("connected", () => {
 
 const s3ObjectSchema = new mongoose.Schema({
     idUsuario: { type: Number, required: true },
-    etag: { type: String, required: true },
+    key: { type: String, required: true },
     minytype: { type: String, required: true },
 });
 
 const S3Object = mongoose.model("S3Object", s3ObjectSchema);
 
-export async function insertS3(id:number,etag:string,minytype:string): Promise<boolean> {
+export async function insertS3(id:number,key:string,minytype:string): Promise<boolean> {
     const s3Object = new S3Object({
         idUsuario: id,
-        etag: etag,
+        key: key,
         minytype: minytype,
     });
     const savedS3Object = await s3Object.save();
     return savedS3Object === savedS3Object 
 }
 
-export async function findS3ById(id:number,minytype:string) {
+export async function findS3ById(id:number,minytype?:string) {
     const s3Object = await S3Object.findOne({ idUsuario: id, minytype: minytype });
     return s3Object;
+}
+
+export async function deleteS3ById(id:number, minytype:string): Promise<boolean> {
+    const result = await S3Object.deleteOne({ idUsuario: id, minytype: minytype });
+    return result.deletedCount > 0;
 }
 

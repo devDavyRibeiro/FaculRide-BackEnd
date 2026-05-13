@@ -11,8 +11,8 @@ import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
-import {uploadArquivoS3,getArquivoS3byID} from '../utils/s3Client'
-import { insertS3,findS3ById} from "../utils/moogose";
+import { uploadArquivoS3, getArquivoS3byID, deletarArquivoS3 } from '../utils/s3Client'
+import { insertS3, findS3ById, deleteS3ById } from "../utils/moogose";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
@@ -329,7 +329,7 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
 // Upload de foto (multipart 'file')
 export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
   try {
-    
+
     const userCtx = (req as any).user;
     const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
     if (!idUsuario) {
@@ -341,12 +341,12 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
       return res.status(400).json({ erro: "Envie um arquivo em 'file' (multipart/form-data)" });
     }
 
-    const aws =  await uploadArquivoS3(req.file!);
-    if(!aws) {      
+    const aws = await uploadArquivoS3(req.file!);
+    if (!aws) {
       return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
     }
 
-    const s3Inserted = await insertS3(idUsuario, aws.ETag!, file.mimetype);
+    const s3Inserted = await insertS3(idUsuario, aws.Key!, file.mimetype);
     if (!s3Inserted) {
       return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
     }
@@ -363,17 +363,17 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
 };
 
 const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => {
-    const s3Object = await findS3ById(idUsuario,"image/jpeg") || await findS3ById(idUsuario,"image/png") || await findS3ById(idUsuario,"image/webp");
-    let fotoUrl: string | null = "";
-    if(s3Object) {
-      const fileS3 = await getArquivoS3byID(s3Object.etag);
-      if (fileS3) {
-        fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
-      } else {
-        fotoUrl = null
-      }
+  const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
+  let fotoUrl: string | null = "";
+  if (s3Object) {
+    const fileS3 = await getArquivoS3byID(s3Object.key);
+    if (fileS3) {
+      fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
+    } else {
+      fotoUrl = null
     }
-    return fotoUrl;
+  }
+  return fotoUrl;
 }
 
 // Alterar senha do usuário autenticado
@@ -427,4 +427,26 @@ export const alterarSenha = async (req: Request, res: Response) => {
       erro: error.message || "Erro ao alterar senha",
     });
   }
-};
+}
+export const deletarFotoUsuario = async (req: Request, res: Response) => {
+  try {
+    const userCtx = (req as any).user;
+    const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
+    if (!idUsuario) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
+    const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
+    if (!s3Object) {
+      return res.status(404).json({ erro: "Foto do usuário não encontrada" });
+    }
+    await deletarArquivoS3(s3Object.key);
+    const result = await deleteS3ById(idUsuario, s3Object.minytype);
+    if (!result) {
+      return res.status(500).json({ erro: "Falha ao deletar informações no MongoDB" });
+    }
+    return res.status(200).json({ mensagem: "Foto do usuário deletada com sucesso" });
+  } catch (error: any) {
+    console.error("Erro ao deletar foto do usuário:", error);
+    return res.status(500).json({ erro: error.message || "Erro ao deletar foto" });
+  }
+}
