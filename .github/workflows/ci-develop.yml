@@ -1,0 +1,151 @@
+name: CI - Development
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '24.14.0'
+          cache: 'npm'
+
+      - name: Validar mensagens dos commits
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: ./commitlint.config.js
+          failOnWarnings: false
+          helpMessage: "Utilize o padrão: tipo(escopo): descrição (ex: feat(ui): novo botão)"
+
+      - name: Instalar Dependências
+        run: npm install --force
+
+
+      - name: Instalar Semver Global
+        run: npm install -g semver
+
+      - name: Criar tag caso não exista
+        id: create_tag
+        run: |
+          git fetch --tags --force --prune
+
+          LAST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1 || echo "v0.0.0")
+          echo "Última tag encontrada: $LAST_TAG"
+
+          if [ "$LAST_TAG" = "v0.0.0" ]; then
+            echo "Nenhuma tag encontrada, criando a primeira tag v0.1.0"
+            git tag v0.1.0
+            git push origin v0.1.0
+          else
+            echo "Tag já existe, continuando com o pipeline"
+          fi
+
+      - name: Calcular nova versão Preview
+        id: version
+        run: |
+          git fetch --tags --force --prune
+
+          LAST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1 || echo "v0.0.0")
+          CURRENT_VERSION="${LAST_TAG#v}"
+
+          NEW_VERSION=$(semver -i patch "$CURRENT_VERSION")
+
+          # Número do preview (quantas tags preview já existem para essa versão base)
+          COUNT=$(git tag --list "v${NEW_VERSION}-preview.*" | wc -l | xargs)
+          PREVIEW_VERSION="v${NEW_VERSION}-preview.$((COUNT+1))"
+
+          echo "NEW_VERSION=$PREVIEW_VERSION" >> $GITHUB_ENV
+          echo "new_version=$PREVIEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Criar Release Preview
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.new_version }}
+          name: "Preview ${{ steps.version.outputs.new_version }}"
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Atualizar versão no package.json
+        id: update_package
+        run: |
+          # Versão atual
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "📦 Versão atual no package.json: $CURRENT_VERSION"
+
+          # Incrementa patch
+          NEW_VERSION=$(npx semver -i patch "$CURRENT_VERSION")
+          echo "📦 Nova versão: $NEW_VERSION"
+
+          # Atualiza package.json com a nova versão
+          node -e "
+            const fs = require('fs');
+            const pkg = require('./package.json');
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+          "
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit da nova versão
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Ajusta o remote
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+
+          git add package.json
+          git commit -m "chore(version): bump to ${{ steps.update_package.outputs.new_version }}" || echo "Sem alterações para commitar"
+          git push origin develop
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags:
+            ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:development-latest
+
+  notify_failure:
+    name: Notificar Falha
+    needs: pipeline
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Enviar E-mail de Erro
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_HOST }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USER }}
+          password: ${{ secrets.MAIL_PASS }}
+          subject: "🚨 FALHA NO CI/CD: ${{ github.repository }}"
+          to: "${{ secrets.TEAM_EMAILS }}"
+          from: "GitHub Actions <no-reply@seu-dominio.com>"
+          body: |
+            O pipeline do projeto ${{ github.repository }} falhou!
+            Detalhes:
+            - Branch: ${{ github.ref_name }}
+            - Autor do Commit: ${{ github.actor }}
+            - Workflow: ${{ github.workflow }}
+            - Log do Erro: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Verifique o link acima para entender a causa da falha.

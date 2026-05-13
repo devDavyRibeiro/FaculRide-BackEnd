@@ -1,0 +1,174 @@
+name: CI - Production
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '24.14.0'
+          cache: 'npm'
+
+      - name: Validar mensagens dos commits
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: ./commitlint.config.js
+          failOnWarnings: false
+          helpMessage: "Utilize o padrão: tipo(escopo): descrição (ex: feat(ui): novo botão)"
+
+      - name: Instalar Dependências
+        run: npm install --force
+      
+      - name: Instalar Semver Global
+        run: npm install -g semver
+      
+      - name: Criar tag caso não exista
+        id: create_tag
+        run: |
+          git fetch --tags --force --prune
+
+          LAST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1 || echo "v0.0.0")
+          echo "Última tag encontrada: $LAST_TAG"
+
+          if [ "$LAST_TAG" = "v0.0.0" ]; then
+            echo "Nenhuma tag encontrada, criando a primeira tag v0.1.0"
+            git tag v0.1.0
+            git push origin v0.1.0
+          else
+            echo "Tag já existe, continuando com o pipeline"
+          fi
+      
+      - name: Calcular nova versão
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force --prune
+
+          LAST_TAG=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1 || true)
+          [ -z "$LAST_TAG" ] && LAST_TAG="v0.0.0"
+          echo "Última tag: $LAST_TAG"
+
+          CURRENT_VERSION="${LAST_TAG#v}"
+          LOG_RANGE="${LAST_TAG}..HEAD"
+
+          mapfile -t COMMITS < <(git log ${LOG_RANGE} --pretty=format:'%s' || true)
+
+          echo "Commits desde ${LAST_TAG}:"
+          printf ' - %s\n' "${COMMITS[@]:-<nenhum>}"
+
+          MAJOR=0; MINOR=0; PATCH=0
+          for COMMIT in "${COMMITS[@]:-}"; do
+            if [[ "$COMMIT" == *"BREAKING CHANGE"* ]] || [[ "$COMMIT" =~ ^feat!\: ]] || [[ "$COMMIT" =~ \!$ ]]; then
+              MAJOR=1
+            elif [[ "$COMMIT" =~ ^feat(\(.+\))?\: ]]; then
+              MINOR=1
+            elif [[ "$COMMIT" =~ ^fix(\(.+\))?\: ]]; then
+              PATCH=1
+            fi
+          done
+
+          NEW_VERSION="$CURRENT_VERSION"
+          if [[ $MAJOR -eq 1 ]]; then
+            NEW_VERSION=$(semver -i major "$CURRENT_VERSION")
+          elif [[ $MINOR -eq 1 ]]; then
+            NEW_VERSION=$(semver -i minor "$CURRENT_VERSION")
+          elif [[ $PATCH -eq 1 ]]; then
+            NEW_VERSION=$(semver -i patch "$CURRENT_VERSION")
+          fi
+
+          echo "Versão final: $CURRENT_VERSION -> $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "should_deploy=$([[ $CURRENT_VERSION != $NEW_VERSION ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Atualizar versão no package.json
+        if: steps.version.outputs.should_deploy == 'true'
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "📦 Versão atual no package.json: $CURRENT_VERSION"
+          echo "🆕 Nova versão calculada: $NEW_VERSION"
+
+          if [ "$CURRENT_VERSION" != "$NEW_VERSION" ]; then
+          echo "🔹 Atualizando package.json para $NEW_VERSION..."
+          npm version $NEW_VERSION --no-git-tag-version
+          else
+          echo "✅ A versão no package.json já está atualizada ($CURRENT_VERSION). Nenhuma alteração necessária."
+          fi
+      
+      - name: Criar tag
+        if: steps.version.outputs.should_deploy == 'true'
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 🔑 Troca o remote ANTES de qualquer push
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+
+          git tag "v$NEW_VERSION"
+          git push origin "v$NEW_VERSION"
+      
+      - name: Criar Release
+        if: steps.version.outputs.should_deploy == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.new_version }}
+          name: "Release v${{ steps.version.outputs.new_version }}"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN:
+            ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:production-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:production-${{ steps.version.outputs.new_version }}
+
+notify_failure:
+    name: Notificar Falha
+    needs: pipeline
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Enviar E-mail de Erro
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_HOST }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USER }}
+          password: ${{ secrets.MAIL_PASS }}
+          subject: "🚨 FALHA NO CI/CD: ${{ github.repository }}"
+          to: "${{ secrets.TEAM_EMAILS }}"
+          from: "GitHub Actions <no-reply@seu-dominio.com>"
+          body: |
+            O pipeline do projeto ${{ github.repository }} falhou!
+            Detalhes:
+            - Branch: ${{ github.ref_name }}
+            - Autor do Commit: ${{ github.actor }}
+            - Workflow: ${{ github.workflow }}
+            - Log do Erro: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Verifique o link acima para entender a causa da falha.
