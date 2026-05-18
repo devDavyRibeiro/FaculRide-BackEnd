@@ -8,17 +8,25 @@ import {
   S3Client,
   S3ServiceException,
 } from "@aws-sdk/client-s3";
-export const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.aws_access_key_id!,
-    secretAccessKey: process.env.aws_secret_access_key!,
-    sessionToken: process.env.aws_session_token!,
-  },
-});
-
 import { Upload } from "@aws-sdk/lib-storage";
-import e from "express";
+export let s3: S3Client;
+if(process.env.NODE_ENV === "dev"){
+  s3 = new S3Client({
+   region: process.env.AWS_REGION,
+   credentials: {
+     accessKeyId: process.env.aws_access_key_id!,
+     secretAccessKey: process.env.aws_secret_access_key!,
+     sessionToken: process.env.aws_session_token!,
+   },
+ });
+}
+else{
+  s3 = new S3Client({
+    region: process.env.AWS_REGION,
+  });
+}
+
+
 
 export async function uploadArquivoS3(file: Express.Multer.File): Promise<CompleteMultipartUploadCommandOutput |  undefined> {
   const upload = new Upload({
