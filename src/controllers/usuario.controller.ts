@@ -207,6 +207,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
 export const buscarUsuarioPorId = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   let fotoUrl: string | null = "";
+  let cnhFotoUrl: string | null = "";
 
   try {
     const usuario = await UsuarioModel.findByPk(id);
@@ -219,6 +220,7 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
       where: { idUsuario: usuario.idUsuario },
     });
     fotoUrl = await getFotoByUsuarioId(usuario.idUsuario);
+    cnhFotoUrl = await getFotoCnhByUsuarioId(usuario.idUsuario);
     return res.status(200).json({
       id: usuario.idUsuario,
       nome: usuario.nome,
@@ -238,6 +240,8 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
       cnh: usuario.cnh ?? null,
       fotoUrl: fotoUrl,
       fotoPath: usuario.fotoPath ?? null,
+      cnhFotoUrl: cnhFotoUrl,
+      cnhFotoPath: usuario.cnhFotoPath ?? null,
       veiculo: veiculo ? veiculo.toJSON() : null,
     });
   } catch (error: any) {
@@ -326,6 +330,54 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
   }
 };
 
+// CnhUrl/CnhPath
+export const atualizarFotoCnhUsuario = async (req: Request, res: Response) => {
+  try {
+    const { cnhFotoUrl, cnhFotoPath } = req.body || {};
+
+    if (!cnhFotoUrl && !cnhFotoPath) {
+      return res.status(400).json({
+        erro: "Envie pelo menos cnhFotoUrl ou cnhFotoPath",
+      });
+    }
+
+    const userCtx = (req as any).user;
+    const idUsuarioAutenticado: number | undefined =
+      userCtx?.id ?? userCtx?.idUsuario;
+
+    if (!idUsuarioAutenticado) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
+
+    const usuario = await UsuarioModel.findByPk(idUsuarioAutenticado);
+
+    if (!usuario) {
+      return res.status(404).json({ erro: "Usuário não encontrado" });
+    }
+
+    if (usuario.tipoUsuario !== "motorista") {
+      return res.status(403).json({
+        erro: "Apenas motoristas podem atualizar foto da CNH",
+      });
+    }
+
+    await usuario.update({
+      ...(typeof cnhFotoUrl !== "undefined" ? { cnhFotoUrl } : {}),
+      ...(typeof cnhFotoPath !== "undefined" ? { cnhFotoPath } : {}),
+    });
+
+    return res.status(200).json({
+      mensagem: "Foto da CNH atualizada com sucesso",
+    });
+  } catch (error: any) {
+    console.error("Erro ao atualizar foto da CNH:", error);
+
+    return res.status(500).json({
+      erro: error.message || "Erro ao atualizar foto da CNH",
+    });
+  }
+};
+
 // Upload de foto (multipart 'file')
 export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
   try {
@@ -362,6 +414,74 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
   }
 };
 
+// Upload de foto da CNH (multipart 'file')
+export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
+  try {
+    const userCtx = (req as any).user;
+    const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
+
+    if (!idUsuario) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
+
+    const usuario = await UsuarioModel.findByPk(idUsuario);
+
+    if (!usuario) {
+      return res.status(404).json({ erro: "Usuário não encontrado" });
+    }
+
+    if (usuario.tipoUsuario !== "motorista") {
+      return res.status(403).json({
+        erro: "Apenas motoristas podem enviar foto da CNH",
+      });
+    }
+
+    const file = (req as any).file as {
+      buffer: Buffer;
+      mimetype: string;
+      size: number;
+      originalname: string;
+    } | undefined;
+
+    if (!file) {
+      return res.status(400).json({
+        erro: "Envie um arquivo em 'file' (multipart/form-data)",
+      });
+    }
+
+    const aws = await uploadArquivoS3(req.file!);
+
+    if (!aws) {
+      return res.status(500).json({
+        erro: "Falha ao enviar arquivo para AWS S3",
+      });
+    }
+
+    const s3Inserted = await insertS3(
+      idUsuario,
+      aws.ETag!,
+      `CNH-${file.mimetype}`
+    );
+
+    if (!s3Inserted) {
+      return res.status(500).json({
+        erro: "Falha ao salvar informações da CNH no MongoDB",
+      });
+    }
+
+    return res.status(200).json({
+      mensagem: "Foto da CNH enviada com sucesso",
+      url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`,
+    });
+  } catch (error: any) {
+    console.error("cadastrarFotoCnhUsuario:", error);
+
+    return res.status(500).json({
+      erro: error.message || "Erro ao enviar foto da CNH",
+    });
+  }
+};
+
 const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => {
     const s3Object = await findS3ById(idUsuario,"image/jpeg") || await findS3ById(idUsuario,"image/png") || await findS3ById(idUsuario,"image/webp");
     let fotoUrl: string | null = "";
@@ -375,6 +495,27 @@ const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => 
     }
     return fotoUrl;
 }
+
+const getFotoCnhByUsuarioId = async (idUsuario: number): Promise<string | null> => {
+  const s3Object =
+    await findS3ById(idUsuario, "CNH-image/jpeg") ||
+    await findS3ById(idUsuario, "CNH-image/png") ||
+    await findS3ById(idUsuario, "CNH-image/webp");
+
+  let cnhFotoUrl: string | null = "";
+
+  if (s3Object) {
+    const fileS3 = await getArquivoS3byID(s3Object.etag);
+
+    if (fileS3) {
+      cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
+    } else {
+      cnhFotoUrl = null;
+    }
+  }
+
+  return cnhFotoUrl;
+};
 
 // Alterar senha do usuário autenticado
 export const alterarSenha = async (req: Request, res: Response) => {
