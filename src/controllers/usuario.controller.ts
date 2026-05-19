@@ -86,6 +86,8 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
   const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
   usuario.senha = senhaCriptografada;
 
+  console.log("Criptografando senha: ", usuario.senha);
+
   // Cria usuário
   const novoUsuario = await UsuarioModel.create(usuario);
 
@@ -130,20 +132,18 @@ export const filtrarUsuarios = async (filtros: IusuarioFiltros): Promise<Iusuari
 // Login de usuário com Log de Acesso
 export const loginUsuario = async (req: Request, res: Response) => {
   const { email, senha } = req.body;
-
   if (!email || !senha) {
     return res.status(400).json({ erro: "E-mail e senha são obrigatórios" });
   }
 
   try {
-    const usuario = await UsuarioModel.findOne({
+    let usuario = await UsuarioModel.findOne({
       where: { email: email.trim().toLowerCase() },
     });
-
     if (!usuario) {
       return res.status(401).json({ erro: "E-mail ou senha inválidos" });
     }
-
+    usuario = usuario.toJSON() as unknown as UsuarioModel;
     const senhaValida = await bcrypt.compare(senha, usuario.senha);
 
     if (!senhaValida) {
