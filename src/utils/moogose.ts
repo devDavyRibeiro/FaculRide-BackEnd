@@ -53,3 +53,7 @@ export async function deleteS3ById(id:number, minytype:string): Promise<boolean>
     return result.deletedCount > 0;
 }
 
+export async function putS3(idUsuario:number, key:string, minytype:string): Promise<boolean> {
+   const result = await S3Object.updateOne({ idUsuario: idUsuario, minytype: minytype }, { key: key });
+   return result.modifiedCount > 0;
+}

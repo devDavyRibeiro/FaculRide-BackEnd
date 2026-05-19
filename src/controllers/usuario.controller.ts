@@ -12,7 +12,7 @@ import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interface
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
 import { uploadArquivoS3, getArquivoS3byID, deletarArquivoS3 } from '../utils/s3Client'
-import { insertS3, findS3ById, deleteS3ById } from "../utils/moogose";
+import { insertS3, findS3ById, deleteS3ById,putS3 } from "../utils/moogose";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
@@ -293,36 +293,47 @@ export const deletarUsuario = async (req: Request, res: Response) => {
 
 // FotoUrl/FotoPath
 export const atualizarFotoUsuario = async (req: Request, res: Response) => {
-  try {
-    const { fotoUrl, fotoPath } = req.body || {};
-
-    if (!fotoUrl && !fotoPath) {
-      return res.status(400).json({ erro: "Envie pelo menos fotoUrl ou fotoPath" });
-    }
-
-    // Obtém o usuário autenticado do middleware (id ou idUsuario)
+  try{
     const userCtx = (req as any).user;
-    const idUsuarioAutenticado: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
-
-    if (!idUsuarioAutenticado) {
+    const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
+    if (!idUsuario) {
       return res.status(401).json({ erro: "Usuário não autenticado" });
     }
 
-    const usuario = await UsuarioModel.findByPk(idUsuarioAutenticado);
-    if (!usuario) {
-      return res.status(404).json({ erro: "Usuário não encontrado" });
+    const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
+    if (!s3Object) {
+      return res.status(404).json({ erro: "Foto do usuário não encontrada" });
+    }
+    await deletarArquivoS3(s3Object.key);
+    const result = await deleteS3ById(idUsuario, s3Object.minytype);
+    if (!result) {
+      return res.status(500).json({ erro: "Falha ao deletar informações no MongoDB" });
     }
 
-    // Atualiza SOMENTE os campos novos
-    await usuario.update({
-      ...(typeof fotoUrl !== "undefined" ? { fotoUrl } : {}),
-      ...(typeof fotoPath !== "undefined" ? { fotoPath } : {}),
-    });
+    const file = (req as any).file as { buffer: Buffer; mimetype: string; size: number; originalname: string } | undefined;
+    if (!file) {
+      return res.status(400).json({ erro: "Envie um arquivo em 'file' (multipart/form-data)" });
+    }
 
-    return res.status(200).json({ mensagem: "Foto atualizada com sucesso" });
-  } catch (error: any) {
-    console.error("Erro ao atualizar foto do usuário:", error);
-    return res.status(500).json({ erro: error.message || "Erro ao atualizar foto" });
+    const aws = await uploadArquivoS3(req.file!);
+    if (!aws) {
+      return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
+    }
+
+    const s3Put = await putS3(idUsuario, aws.Key!, file.mimetype);
+    if (!s3Put) {
+      await deletarArquivoS3(aws.Key!);
+      return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
+    }
+    console.log("Upload AWS S3 concluído:", s3Put);
+
+    return res.status(200).json({
+      mensagem: "Foto enviada e usuário atualizado com sucesso",
+      url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`
+    });
+    
+  }catch(error:any){
+
   }
 };
 

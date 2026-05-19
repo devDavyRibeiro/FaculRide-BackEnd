@@ -82,8 +82,11 @@ router.post("/foto/upload", upload.single("file"), (req, res) => {
   cadastrarFotoUsuario(req, res);
 });
 
-router.post("/foto/delete/:id", (req, res) => {
+router.delete("/foto/delete/:id", (req, res) => {
   deletarFotoUsuario(req, res);
 });
 
+router.put("/foto/update/:id", (req, res) => {
+  atualizarFotoUsuario(req, res);
+})
 export default router;
