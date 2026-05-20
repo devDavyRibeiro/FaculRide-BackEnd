@@ -299,21 +299,17 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
     if (!idUsuario) {
       return res.status(401).json({ erro: "Usuário não autenticado" });
     }
-
-    const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
-    if (!s3Object) {
-      return res.status(404).json({ erro: "Foto do usuário não encontrada" });
-    }
-    await deletarArquivoS3(s3Object.key);
-    const result = await deleteS3ById(idUsuario, s3Object.minytype);
-    if (!result) {
-      return res.status(500).json({ erro: "Falha ao deletar informações no MongoDB" });
-    }
-
     const file = (req as any).file as { buffer: Buffer; mimetype: string; size: number; originalname: string } | undefined;
     if (!file) {
       return res.status(400).json({ erro: "Envie um arquivo em 'file' (multipart/form-data)" });
     }
+    
+    const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
+    if (!s3Object) {
+      return res.status(404).json({ erro: "Foto do usuário não encontrada" });
+    }
+    console.log("Foto atual do usuário encontrada no MongoDB:", s3Object);
+    await deletarArquivoS3(s3Object.key);
 
     const aws = await uploadArquivoS3(req.file!);
     if (!aws) {

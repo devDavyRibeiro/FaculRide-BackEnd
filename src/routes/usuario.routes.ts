@@ -39,7 +39,7 @@ router.post("/login", (req, res) => {
 });
 
 // A partir daqui todas as rotas são protegidas
-//router.use(AuthorizeMiddleware as any);
+router.use(AuthorizeMiddleware as any);
 
 // GET Listar ou filtrar usuários
 router.get("/", async (req, res) => {
@@ -82,11 +82,11 @@ router.post("/foto/upload", upload.single("file"), (req, res) => {
   cadastrarFotoUsuario(req, res);
 });
 
-router.delete("/foto/delete/:id", (req, res) => {
+router.delete("/foto/delete", (req, res) => {
   deletarFotoUsuario(req, res);
 });
 
-router.put("/foto/update/:id", (req, res) => {
+router.put("/foto/update", upload.single("file"), (req, res) => {
   atualizarFotoUsuario(req, res);
 })
 export default router;
