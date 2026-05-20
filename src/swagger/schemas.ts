@@ -1,123 +1,136 @@
 export const swaggerDocument = {
-  openapi: '3.0.0',
+  openapi: "3.0.0",
   info: {
-    title: 'FaculRide API',
-    description: 'Documentação da API FaculRide',
-    version: '1.0.0',
+    title: "FaculRide API",
+    description: "Documentação da API FaculRide",
+    version: "1.0.0",
   },
   servers: [
     {
-      url: process.env.BASE_URL || 'http://localhost:3000/api',
-      description: 'Servidor API',
+      url: process.env.BASE_URL || "http://localhost:3000/api",
+      description: "Servidor API",
     },
   ],
   components: {
     schemas: {
       Usuario: {
-        type: 'object',
+        type: "object",
         properties: {
-          idUsuario: { type: 'integer' },
-          nome: { type: 'string' },
-          cpf: { type: 'string' },
-          email: { type: 'string' },
-          senha: { type: 'string' },
-          telefone: { type: 'string' },
-          cep: { type: 'string' },
-          endereco: { type: 'string' },
-          numero: { type: 'string' },
-          cidade: { type: 'string' },
-          estado: { type: 'string' },
-          fatec: { type: 'string' },
-          ra: { type: 'string' },
-          genero: { type: 'boolean' },
-          dataNascimento: { type: 'string', format: 'date' },
-          tipoUsuario: { type: 'string', enum: ['passageiro', 'motorista'] },
+          idUsuario: { type: "integer" },
+          nome: { type: "string" },
+          cpf: { type: "string" },
+          email: { type: "string" },
+          senha: { type: "string" },
+          telefone: { type: "string" },
+          cep: { type: "string" },
+          endereco: { type: "string" },
+          numero: { type: "string" },
+          cidade: { type: "string" },
+          estado: { type: "string" },
+          fatec: { type: "string" },
+          ra: { type: "string" },
+          genero: { type: "boolean" },
+          dataNascimento: { type: "string", format: "date" },
+          tipoUsuario: { type: "string", enum: ["passageiro", "motorista"] },
         },
-        required: ['nome', 'email', 'senha', 'tipoUsuario', 'dataNascimento'],
+        required: ["nome", "email", "senha", "tipoUsuario", "dataNascimento"],
+      },
+
+      UserFileUpload: {
+        type: "object",
+        required: ["file"],
+        properties: {
+          file: {
+            type: "string",
+            format: "binary",
+            description:
+              "Arquivo do usuário (foto  de perfil png, jpg, jpeg ou webp)",
+          },
+        },
       },
 
       Veiculo: {
-        type: 'object',
+        type: "object",
         properties: {
-          ID_veiculo: { type: 'integer' },
-          Placa_veiculo: { type: 'string' },
-          Cor: { type: 'string' },
-          Modelo: { type: 'string' },
-          Ano: { type: 'integer' },
-          idUsuario: { type: 'integer' },
+          ID_veiculo: { type: "integer" },
+          Placa_veiculo: { type: "string" },
+          Cor: { type: "string" },
+          Modelo: { type: "string" },
+          Ano: { type: "integer" },
+          idUsuario: { type: "integer" },
         },
-        required: ['Modelo', 'Cor', 'idUsuario'],
+        required: ["Modelo", "Cor", "idUsuario"],
       },
 
       Viagem: {
-        type: 'object',
+        type: "object",
         properties: {
-          idViagem: { type: 'integer' },
-          tipoUsuario: { type: 'string', enum: ['motorista', 'passageiro'] },
-          partida: { type: 'string' },
-          destino: { type: 'string' },
-          horarioEntrada: { type: 'string' },
-          horarioSaida: { type: 'string' },
-          ajudaDeCusto: { type: 'string' },
-          idUsuario: { type: 'integer' },
+          idViagem: { type: "integer" },
+          tipoUsuario: { type: "string", enum: ["motorista", "passageiro"] },
+          partida: { type: "string" },
+          destino: { type: "string" },
+          horarioEntrada: { type: "string" },
+          horarioSaida: { type: "string" },
+          ajudaDeCusto: { type: "string" },
+          idUsuario: { type: "integer" },
         },
         required: [
-          'tipoUsuario',
-          'partida',
-          'destino',
-          'horarioEntrada',
-          'horarioSaida',
-          'ajudaDeCusto',
-          'idUsuario',
+          "tipoUsuario",
+          "partida",
+          "destino",
+          "horarioEntrada",
+          "horarioSaida",
+          "ajudaDeCusto",
+          "idUsuario",
         ],
       },
 
       Avaliacao: {
-        type: 'object',
+        type: "object",
         properties: {
-          ID_Avaliacao: { type: 'integer' },
-          ID_Avaliador: { type: 'integer' },
-          ID_Avaliado: { type: 'integer' },
-          Comentario: { type: 'string' },
-          Estrelas: { type: 'integer', minimum: 1, maximum: 5 },
+          ID_Avaliacao: { type: "integer" },
+          ID_Avaliador: { type: "integer" },
+          ID_Avaliado: { type: "integer" },
+          Comentario: { type: "string" },
+          Estrelas: { type: "integer", minimum: 1, maximum: 5 },
         },
-        required: ['ID_Avaliador', 'ID_Avaliado', 'Comentario', 'Estrelas'],
+        required: ["ID_Avaliador", "ID_Avaliado", "Comentario", "Estrelas"],
       },
 
       LogAcesso: {
-        type: 'object',
+        type: "object",
         properties: {
-          idLog: { type: 'integer' },
-          idUsuario: { type: 'integer' },
-          dataHora: { type: 'string', format: 'date-time' },
-          descricao: { type: 'string' },
+          idLog: { type: "integer" },
+          idUsuario: { type: "integer" },
+          dataHora: { type: "string", format: "date-time" },
+          descricao: { type: "string" },
         },
-        required: ['idUsuario', 'dataHora', 'descricao'],
+        required: ["idUsuario", "dataHora", "descricao"],
       },
 
       LoginRequest: {
-        type: 'object',
+        type: "object",
         properties: {
-          email: { type: 'string' },
-          senha: { type: 'string' },
+          email: { type: "string" },
+          senha: { type: "string" },
         },
-        required: ['email', 'senha'],
+        required: ["email", "senha"],
       },
 
       LoginResponse: {
-        type: 'object',
+        type: "object",
         properties: {
-          mensagem: { type: 'string' },
-          token: { type: 'string' },
-          usuario: { $ref: '#/components/schemas/Usuario' },
+          mensagem: { type: "string" },
+          token: { type: "string" },
+          usuario: { $ref: "#/components/schemas/Usuario" },
         },
       },
     },
     securitySchemes: {
       bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
       },
     },
   },
@@ -126,235 +139,292 @@ export const swaggerDocument = {
 
   paths: {
     // 🔑 LOGIN
-    '/usuario/login': {
+    "/usuario/login": {
       post: {
-        summary: 'Login do usuário',
-        tags: ['Auth'],
+        summary: "Login do usuário",
+        tags: ["Auth"],
         requestBody: {
           required: true,
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/LoginRequest' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/LoginRequest" },
             },
           },
         },
         responses: {
           200: {
-            description: 'Login realizado com sucesso',
+            description: "Login realizado com sucesso",
             content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/LoginResponse' },
+              "application/json": {
+                schema: { $ref: "#/components/schemas/LoginResponse" },
               },
             },
           },
-          401: { description: 'Credenciais inválidas' },
+          401: { description: "Credenciais inválidas" },
         },
       },
     },
 
     // Usuário
-    '/usuario': {
+    "/usuario": {
       get: {
-        summary: 'Listar usuários ou filtrar',
-        tags: ['Usuário'],
+        summary: "Listar usuários ou filtrar",
+        tags: ["Usuário"],
         responses: {
           200: {
-            description: 'Lista de usuários',
+            description: "Lista de usuários",
             content: {
-              'application/json': {
-                schema: { type: 'array', items: { $ref: '#/components/schemas/Usuario' } },
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/Usuario" },
+                },
               },
             },
           },
         },
       },
       post: {
-        summary: 'Cadastrar um novo usuário',
-        tags: ['Usuário'],
+        summary: "Cadastrar um novo usuário",
+        tags: ["Usuário"],
         requestBody: {
           required: true,
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/Usuario' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Usuario" },
             },
           },
         },
         responses: {
-          201: { description: 'Usuário cadastrado' },
+          201: { description: "Usuário cadastrado" },
         },
       },
     },
 
-    '/usuario/{id}': {
+    "/usuario/{id}": {
       get: {
-        summary: 'Buscar usuário por ID',
-        tags: ['Usuário'],
+        summary: "Buscar usuário por ID",
+        tags: ["Usuário"],
         parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
         ],
         responses: {
-          200: { description: 'Usuário encontrado' },
-          404: { description: 'Usuário não encontrado' },
+          200: { description: "Usuário encontrado" },
+          404: { description: "Usuário não encontrado" },
         },
       },
       put: {
-        summary: 'Atualizar usuário',
-        tags: ['Usuário'],
+        summary: "Atualizar usuário",
+        tags: ["Usuário"],
         parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
         ],
         requestBody: {
           required: true,
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/Usuario' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Usuario" },
             },
           },
         },
         responses: {
-          200: { description: 'Usuário atualizado' },
+          200: { description: "Usuário atualizado" },
         },
       },
       delete: {
-        summary: 'Deletar usuário',
-        tags: ['Usuário'],
+        summary: "Deletar usuário",
+        tags: ["Usuário"],
         parameters: [
-          { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+          },
         ],
         responses: {
-          200: { description: 'Usuário deletado' },
+          200: { description: "Usuário deletado" },
+        },
+      },
+    },
+
+    "/usuario/foto/upload": {
+      post: {
+        summary: "Upload de arquivo do usuário autenticado",
+        description:
+          "Upload de arquivo associado ao usuário identificado via JWT",
+        tags: ["Usuário"],
+        security: [{ bearerAuth: [] }],
+
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                $ref: "#/components/schemas/UserFileUpload",
+              },
+            },
+          },
+        },
+
+        responses: {
+          201: { description: "Arquivo enviado com sucesso" },
+          400: { description: "Arquivo inválido ou não enviado" },
+          401: { description: "Token inválido ou não informado" },
         },
       },
     },
 
     // Veículo
-    '/veiculo': {
+    "/veiculo": {
       get: {
-        summary: 'Listar veículos',
-        tags: ['Veículo'],
+        summary: "Listar veículos",
+        tags: ["Veículo"],
         responses: {
           200: {
-            description: 'Lista de veículos',
+            description: "Lista de veículos",
             content: {
-              'application/json': {
-                schema: { type: 'array', items: { $ref: '#/components/schemas/Veiculo' } },
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/Veiculo" },
+                },
               },
             },
           },
         },
       },
       post: {
-        summary: 'Cadastrar veículo',
-        tags: ['Veículo'],
+        summary: "Cadastrar veículo",
+        tags: ["Veículo"],
         requestBody: {
           required: true,
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/Veiculo' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Veiculo" },
             },
           },
         },
         responses: {
-          201: { description: 'Veículo cadastrado' },
+          201: { description: "Veículo cadastrado" },
         },
       },
     },
 
     // Viagem
-    '/viagem': {
+    "/viagem": {
       get: {
-        summary: 'Listar viagens',
-        tags: ['Viagem'],
+        summary: "Listar viagens",
+        tags: ["Viagem"],
         responses: {
           200: {
-            description: 'Lista de viagens',
+            description: "Lista de viagens",
             content: {
-              'application/json': {
-                schema: { type: 'array', items: { $ref: '#/components/schemas/Viagem' } },
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/Viagem" },
+                },
               },
             },
           },
         },
       },
       post: {
-        summary: 'Cadastrar viagem',
-        tags: ['Viagem'],
+        summary: "Cadastrar viagem",
+        tags: ["Viagem"],
         requestBody: {
           required: true,
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/Viagem' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Viagem" },
             },
           },
         },
         responses: {
-          201: { description: 'Viagem cadastrada' },
+          201: { description: "Viagem cadastrada" },
         },
       },
     },
 
     // Avaliação
-    '/avaliacao': {
+    "/avaliacao": {
       get: {
-        summary: 'Listar avaliações',
-        tags: ['Avaliação'],
+        summary: "Listar avaliações",
+        tags: ["Avaliação"],
         responses: {
           200: {
-            description: 'Lista de avaliações',
+            description: "Lista de avaliações",
             content: {
-              'application/json': {
-                schema: { type: 'array', items: { $ref: '#/components/schemas/Avaliacao' } },
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/Avaliacao" },
+                },
               },
             },
           },
         },
       },
       post: {
-        summary: 'Cadastrar avaliação',
-        tags: ['Avaliação'],
+        summary: "Cadastrar avaliação",
+        tags: ["Avaliação"],
         requestBody: {
           required: true,
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/Avaliacao' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/Avaliacao" },
             },
           },
         },
         responses: {
-          201: { description: 'Avaliação cadastrada' },
+          201: { description: "Avaliação cadastrada" },
         },
       },
     },
 
     // Log de Acesso
-    '/logacesso': {
+    "/logacesso": {
       get: {
-        summary: 'Listar logs de acesso',
-        tags: ['LogAcesso'],
+        summary: "Listar logs de acesso",
+        tags: ["LogAcesso"],
         responses: {
           200: {
-            description: 'Lista de logs',
+            description: "Lista de logs",
             content: {
-              'application/json': {
-                schema: { type: 'array', items: { $ref: '#/components/schemas/LogAcesso' } },
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: { $ref: "#/components/schemas/LogAcesso" },
+                },
               },
             },
           },
         },
       },
       post: {
-        summary: 'Cadastrar log de acesso',
-        tags: ['LogAcesso'],
+        summary: "Cadastrar log de acesso",
+        tags: ["LogAcesso"],
         requestBody: {
           required: true,
           content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/LogAcesso' },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/LogAcesso" },
             },
           },
         },
         responses: {
-          201: { description: 'Log cadastrado' },
+          201: { description: "Log cadastrado" },
         },
       },
     },
