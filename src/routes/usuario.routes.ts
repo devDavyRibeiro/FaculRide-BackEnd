@@ -7,7 +7,7 @@ import {
   atualizarUsuario,
   deletarUsuario,
   atualizarFotoUsuario,
-  uploadFotoUsuario,
+  cadastrarFotoUsuario,
   alterarSenha
 } from "../controllers/usuario.controller";
 import { Iusuario, IusuarioFiltros } from "../interfaces/Iusuario";
@@ -29,7 +29,7 @@ router.post("/", async (req, res) => {
     const resposta = await cadastrarUsuario(usuario);
     res.status(201).json(resposta);
   } catch (error: any) {
-    res.status(400).json({ erro: error.message || "Erro ao cadastrar usuário" });
+    res.status(400).json({ erro: error.message || "Erro ao cadastrar usuário " + error });
   }
 });
 
@@ -43,7 +43,6 @@ router.use(AuthorizeMiddleware as any);
 // GET Listar ou filtrar usuários
 router.get("/", async (req, res) => {
   const filtros = req.query as unknown as IusuarioFiltros;
-
   try {
     const resposta = await filtrarUsuarios(filtros);
     res.status(200).json(resposta);
@@ -79,7 +78,7 @@ router.patch("/foto", (req, res) => {
 
 // NOVA ROTA PROTEGIDA — upload multipart da foto + atualização automática no usuário
 router.post("/foto/upload", upload.single("file"), (req, res) => {
-  uploadFotoUsuario(req, res);
+  cadastrarFotoUsuario(req, res);
 });
 
 export default router;
