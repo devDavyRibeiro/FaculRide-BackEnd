@@ -1,10 +1,8 @@
 # Dependências
 node_modules/
 
-.vscode/
-
-# Build
-dist/
+# Variáveis de ambiente
+.env
 
 # Logs e arquivos temporários
 *.log
