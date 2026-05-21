@@ -50,11 +50,17 @@ const isAllowedOrigin = (origin?: string | null) => {
     // qualquer subdomínio *.vercel.app
     if (url.hostname.endsWith(".vercel.app")) return true;
 
-    // domínio fixo, se tiver
+    // domínio Vercel antigo
     if (origin === "https://faculride.vercel.app") return true;
 
-    // Swagger/API acessado diretamente pela EC2 Backend
+    // Backend AWS via IP + porta
     if (origin === "http://50.16.209.47:3000") return true;
+
+    // Backend AWS via DNS amigável
+    if (origin === "http://faculride-api.duckdns.org") return true;
+
+    // Frontend AWS via DNS amigável
+    if (origin === "http://faculride-front.duckdns.org") return true;
 
     return false;
   } catch {
