@@ -53,6 +53,9 @@ const isAllowedOrigin = (origin?: string | null) => {
     // domínio fixo, se tiver
     if (origin === "https://faculride.vercel.app") return true;
 
+    // Swagger/API acessado diretamente pela EC2 Backend
+    if (origin === "http://50.16.209.47:3000") return true;
+
     return false;
   } catch {
     return false;
