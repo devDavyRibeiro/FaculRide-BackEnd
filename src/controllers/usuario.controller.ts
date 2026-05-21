@@ -144,7 +144,13 @@ export const loginUsuario = async (req: Request, res: Response) => {
       return res.status(401).json({ erro: "E-mail ou senha inválidos" });
     }
 
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    const senhaHash = usuario.getDataValue("senha");
+
+    if (!senhaHash) {
+      return res.status(500).json({ erro: "Senha não encontrada para o usuário" });
+    }
+
+    const senhaValida = await bcrypt.compare(senha, senhaHash);
 
     if (!senhaValida) {
       return res.status(401).json({ erro: "E-mail ou senha inválidos" });
