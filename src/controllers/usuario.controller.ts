@@ -149,6 +149,10 @@ export const loginUsuario = async (req: Request, res: Response) => {
     const tipoUsuario = usuario.getDataValue("tipoUsuario");
     const senhaHash = usuario.getDataValue("senha");
 
+    if (!idUsuario) {
+      return res.status(500).json({ erro: "ID do usuário não encontrado" });
+    }
+
     if (!senhaHash) {
       return res.status(500).json({ erro: "Senha não encontrada para o usuário" });
     }
