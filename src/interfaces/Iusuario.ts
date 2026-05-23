@@ -18,6 +18,8 @@ export interface Iusuario {
   cnh?: string; // somente para motoristas
   fotoUrl?: string | null;
   fotoPath?: string | null;
+  cnhFotoUrl?: string | null;
+  cnhFotoPath?: string | null;
 }
 
 export interface IusuarioFiltros {

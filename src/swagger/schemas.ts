@@ -49,6 +49,19 @@ export const swaggerDocument = {
         },
       },
 
+      CnhFileUpload: {
+        type: "object",
+        required: ["file"],
+        properties: {
+          file: {
+            type: "string",
+            format: "binary",
+            description:
+              "Arquivo da CNH do motorista (png, jpg, jpeg ou webp)",
+          },
+        },
+      },
+
       Veiculo: {
         type: "object",
         properties: {
@@ -276,7 +289,6 @@ export const swaggerDocument = {
             },
           },
         },
-
         responses: {
           201: { description: "Arquivo enviado com sucesso" },
           400: { description: "Arquivo inválido ou não enviado" },
@@ -285,6 +297,34 @@ export const swaggerDocument = {
       },
     },
 
+    "/usuario/cnh/upload": {
+      post: {
+        summary: "Upload da foto da CNH do motorista autenticado",
+        description:
+          "Upload da foto da CNH associado ao motorista identificado via JWT",
+        tags: ["Usuário"],
+        security: [{ bearerAuth: [] }],
+
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                $ref: "#/components/schemas/CnhFileUpload",
+              },
+            },
+          },
+        },
+
+    responses: {
+      200: { description: "Foto da CNH enviada com sucesso" },
+      400: { description: "Arquivo inválido ou não enviado" },
+      401: { description: "Token inválido ou não informado" },
+      403: { description: "Apenas motoristas podem enviar foto da CNH" },
+      500: { description: "Erro ao enviar foto da CNH" },
+    },
+  },
+},
     // Veículo
     "/veiculo": {
       get: {
