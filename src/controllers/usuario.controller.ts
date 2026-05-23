@@ -144,57 +144,69 @@ export const loginUsuario = async (req: Request, res: Response) => {
       return res.status(401).json({ erro: "E-mail ou senha inválidos" });
     }
 
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    const idUsuario = usuario.getDataValue("idUsuario");
+    const nome = usuario.getDataValue("nome");
+    const tipoUsuario = usuario.getDataValue("tipoUsuario");
+    const senhaHash = usuario.getDataValue("senha");
+
+    if (!idUsuario) {
+      return res.status(500).json({ erro: "ID do usuário não encontrado" });
+    }
+
+    if (!senhaHash) {
+      return res.status(500).json({ erro: "Senha não encontrada para o usuário" });
+    }
+
+    const senhaValida = await bcrypt.compare(senha, senhaHash);
 
     if (!senhaValida) {
       return res.status(401).json({ erro: "E-mail ou senha inválidos" });
     }
 
     const veiculo = await VeiculoModel.findOne({
-      where: { idUsuario: usuario.idUsuario },
+      where: { idUsuario },
     });
 
     const token = jwt.sign(
       {
-        id: usuario.idUsuario,
-        nome: usuario.nome,
-        tipoUsuario: usuario.tipoUsuario,
+        id: idUsuario,
+        nome,
+        tipoUsuario,
       },
       process.env.JWT_SECRET || "secretoo123",
       { expiresIn: "1d" }
     );
 
-    // Cria log de acesso automaticamente no login
     await LogAcessoModel.create({
-      idUsuario: usuario.idUsuario,
+      idUsuario,
       dataAcesso: new Date(),
-      tipoUsuario: usuario.tipoUsuario,
+      tipoUsuario,
     });
 
     return res.status(200).json({
       mensagem: "Login realizado com sucesso",
       token,
       usuario: {
-        id: usuario.idUsuario,
-        nome: usuario.nome,
-        cpf: usuario.cpf,
-        email: usuario.email,
-        telefone: usuario.telefone,
-        cep: usuario.cep,
-        endereco: usuario.endereco,
-        numero: usuario.numero,
-        cidade: usuario.cidade,
-        estado: usuario.estado,
-        fatec: usuario.fatec,
-        ra: usuario.ra,
-        genero: usuario.genero,
-        dataNascimento: usuario.dataNascimento,
-        tipoUsuario: usuario.tipoUsuario,
-        cnh: usuario.cnh ?? null,
-        fotoUrl: usuario.fotoUrl ?? null,
-        fotoPath: usuario.fotoPath ?? null,
-        veiculo: veiculo ? veiculo.toJSON() : null
-      }
+        id: idUsuario,
+        nome,
+        cpf: usuario.getDataValue("cpf"),
+        email: usuario.getDataValue("email"),
+        telefone: usuario.getDataValue("telefone"),
+        cep: usuario.getDataValue("cep"),
+        endereco: usuario.getDataValue("endereco"),
+        numero: usuario.getDataValue("numero"),
+        cidade: usuario.getDataValue("cidade"),
+        estado: usuario.getDataValue("estado"),
+        fatec: usuario.getDataValue("fatec"),
+        ra: usuario.getDataValue("ra"),
+        genero: usuario.getDataValue("genero"),
+        dataNascimento: usuario.getDataValue("dataNascimento"),
+        tipoUsuario,
+        cnh: usuario.getDataValue("cnh") ?? null,
+        fotoUrl: usuario.getDataValue("fotoUrl") ?? null,
+        fotoPath: usuario.getDataValue("fotoPath") ?? null,
+        veiculo: veiculo ? veiculo.toJSON() : null,
+      },
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -202,7 +214,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
     });
   }
 };
-
+ 
 // Buscar usuário por ID
 export const buscarUsuarioPorId = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
