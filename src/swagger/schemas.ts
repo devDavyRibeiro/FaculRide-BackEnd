@@ -301,7 +301,7 @@ export const swaggerDocument = {
       post: {
         summary: "Upload da foto da CNH do motorista autenticado",
         description:
-          "Upload da foto da CNH associado ao motorista identificado via JWT",
+          "Upload da foto da CNH associado ao motorista identificado através JWT",
         tags: ["Usuário"],
         security: [{ bearerAuth: [] }],
 
