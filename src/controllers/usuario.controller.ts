@@ -5,14 +5,15 @@ import dotenv from "dotenv";
 import { enviarEmailBoasVindas } from "../utils/email";
 dotenv.config();
 
+import sequelize from "../config/database";
 import { UsuarioModel } from "../models/usuario.model";
 import { VeiculoModel } from "../models/veiculo.model";
 import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
-import {uploadArquivoS3,getArquivoS3byID} from '../utils/s3Client'
-import { insertS3,findS3ById} from "../utils/moogose";
+import { uploadArquivoS3, getArquivoS3byID } from "../utils/s3Client";
+import { insertS3, findS3ById } from "../utils/moogose";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
@@ -75,6 +76,7 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalizado)) {
     throw new Error("E-mail inválido.");
   }
+
   const emailJaExiste = await UsuarioModel.findOne({ where: { email: emailNormalizado } });
   if (emailJaExiste) {
     throw new Error("E-mail já cadastrado.");
@@ -86,28 +88,51 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
   const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
   usuario.senha = senhaCriptografada;
 
-  // Cria usuário
-  const novoUsuario = await UsuarioModel.create(usuario);
+  const transaction = await sequelize.transaction();
 
-  // Cria veículo se for motorista
-  const veiculo = (usuario as any).veiculo as IVeiculo;
-  if (usuario.tipoUsuario === "motorista" && veiculo) {
-    await VeiculoModel.create({
-      ...veiculo,
-      idUsuario: novoUsuario.idUsuario,
-    });
-  }
+  try {
+    // Cria usuário
+    const novoUsuario = await UsuarioModel.create(usuario, { transaction });
 
-  // Envia boas-vindas (assíncrono)
-  (async () => {
-    try {
-      await enviarEmailBoasVindas(novoUsuario.email, novoUsuario.nome);
-    } catch (e) {
-      console.error("[email boas-vindas] falhou:", e);
+    // Recupera o ID corretamente
+    const idUsuarioCriado = novoUsuario.getDataValue("idUsuario");
+
+    if (!idUsuarioCriado) {
+      throw new Error("ID do usuário não foi gerado após o cadastro.");
     }
-  })();
 
-  return { id: novoUsuario.idUsuario };
+    // Cria veículo se for motorista
+    const veiculo = (usuario as any).veiculo as IVeiculo;
+
+    if (usuario.tipoUsuario === "motorista" && veiculo) {
+      await VeiculoModel.create(
+        {
+          Placa_veiculo: veiculo.Placa_veiculo,
+          Cor: veiculo.Cor,
+          Modelo: veiculo.Modelo,
+          Ano: veiculo.Ano ? Number(veiculo.Ano) : null,
+          idUsuario: idUsuarioCriado,
+        },
+        { transaction }
+      );
+    }
+
+    await transaction.commit();
+
+    // Envia boas-vindas (assíncrono)
+    (async () => {
+      try {
+        await enviarEmailBoasVindas(novoUsuario.email, novoUsuario.nome);
+      } catch (e) {
+        console.error("[email boas-vindas] falhou:", e);
+      }
+    })();
+
+    return { id: idUsuarioCriado };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 };
 
 // Filtrar usuários
@@ -119,11 +144,14 @@ export const filtrarUsuarios = async (filtros: IusuarioFiltros): Promise<Iusuari
       ...(filtros.tipoUsuario && { tipoUsuario: filtros.tipoUsuario }),
     },
   });
+
   await Promise.all(
     usuarios.map(async (usuario) => {
       const fotoUrl = await getFotoByUsuarioId(usuario.idUsuario);
-      usuario.setDataValue('fotoUrl', fotoUrl);
-    }));
+      usuario.setDataValue("fotoUrl", fotoUrl);
+    })
+  );
+
   return usuarios;
 };
 
@@ -167,6 +195,9 @@ export const loginUsuario = async (req: Request, res: Response) => {
       where: { idUsuario },
     });
 
+    const fotoUrlMongoS3 = await getFotoByUsuarioId(idUsuario);
+    const cnhFotoUrlMongoS3 = await getFotoCnhByUsuarioId(idUsuario);
+
     const token = jwt.sign(
       {
         id: idUsuario,
@@ -203,8 +234,10 @@ export const loginUsuario = async (req: Request, res: Response) => {
         dataNascimento: usuario.getDataValue("dataNascimento"),
         tipoUsuario,
         cnh: usuario.getDataValue("cnh") ?? null,
-        fotoUrl: usuario.getDataValue("fotoUrl") ?? null,
+        fotoUrl: fotoUrlMongoS3 || usuario.getDataValue("fotoUrl") || null,
         fotoPath: usuario.getDataValue("fotoPath") ?? null,
+        cnhFotoUrl: cnhFotoUrlMongoS3 || usuario.getDataValue("cnhFotoUrl") || null,
+        cnhFotoPath: usuario.getDataValue("cnhFotoPath") ?? null,
         veiculo: veiculo ? veiculo.toJSON() : null,
       },
     });
@@ -214,7 +247,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
     });
   }
 };
- 
+
 // Buscar usuário por ID
 export const buscarUsuarioPorId = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
@@ -231,8 +264,10 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
     const veiculo = await VeiculoModel.findOne({
       where: { idUsuario: usuario.idUsuario },
     });
+
     fotoUrl = await getFotoByUsuarioId(usuario.idUsuario);
     cnhFotoUrl = await getFotoCnhByUsuarioId(usuario.idUsuario);
+
     return res.status(200).json({
       id: usuario.idUsuario,
       nome: usuario.nome,
@@ -250,9 +285,9 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
       dataNascimento: usuario.dataNascimento,
       tipoUsuario: usuario.tipoUsuario,
       cnh: usuario.cnh ?? null,
-      fotoUrl: fotoUrl,
+      fotoUrl: fotoUrl || usuario.fotoUrl || null,
       fotoPath: usuario.fotoPath ?? null,
-      cnhFotoUrl: cnhFotoUrl,
+      cnhFotoUrl: cnhFotoUrl || usuario.cnhFotoUrl || null,
       cnhFotoPath: usuario.cnhFotoPath ?? null,
       veiculo: veiculo ? veiculo.toJSON() : null,
     });
@@ -316,7 +351,6 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
       return res.status(400).json({ erro: "Envie pelo menos fotoUrl ou fotoPath" });
     }
 
-    // Obtém o usuário autenticado do middleware (id ou idUsuario)
     const userCtx = (req as any).user;
     const idUsuarioAutenticado: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
 
@@ -329,7 +363,6 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
       return res.status(404).json({ erro: "Usuário não encontrado" });
     }
 
-    // Atualiza SOMENTE os campos novos
     await usuario.update({
       ...(typeof fotoUrl !== "undefined" ? { fotoUrl } : {}),
       ...(typeof fotoPath !== "undefined" ? { fotoPath } : {}),
@@ -393,20 +426,33 @@ export const atualizarFotoCnhUsuario = async (req: Request, res: Response) => {
 // Upload de foto (multipart 'file')
 export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
   try {
-    
     const userCtx = (req as any).user;
     const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
+
     if (!idUsuario) {
       return res.status(401).json({ erro: "Usuário não autenticado" });
     }
 
-    const file = (req as any).file as { buffer: Buffer; mimetype: string; size: number; originalname: string } | undefined;
+    const file = (req as any).file as {
+      buffer: Buffer;
+      mimetype: string;
+      size: number;
+      originalname: string;
+    } | undefined;
+
     if (!file) {
       return res.status(400).json({ erro: "Envie um arquivo em 'file' (multipart/form-data)" });
     }
 
-    const aws =  await uploadArquivoS3(req.file!);
-    if(!aws) {      
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+    if (!tiposPermitidos.includes(file.mimetype)) {
+      return res.status(400).json({
+        erro: "Formato inválido. Envie uma imagem JPG, PNG ou WEBP.",
+      });
+    }
+
+    const aws = await uploadArquivoS3(req.file!);
+    if (!aws) {
       return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
     }
 
@@ -414,11 +460,25 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
     if (!s3Inserted) {
       return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
     }
+
+    const fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    const fotoPath = aws.Key;
+
+    const usuario = await UsuarioModel.findByPk(idUsuario);
+    if (usuario) {
+      await usuario.update({
+        fotoUrl,
+        fotoPath,
+      });
+    }
+
     console.log("Upload AWS S3 concluído:", s3Inserted);
 
     return res.status(200).json({
       mensagem: "Foto enviada e usuário atualizado com sucesso",
-      url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`
+      url: fotoUrl,
+      fotoUrl,
+      fotoPath,
     });
   } catch (error: any) {
     console.error("uploadFotoUsuario:", error);
@@ -461,6 +521,13 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
       });
     }
 
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!tiposPermitidos.includes(file.mimetype)) {
+      return res.status(400).json({
+        erro: "Formato inválido. Envie JPG, PNG, WEBP ou PDF.",
+      });
+    }
+
     const aws = await uploadArquivoS3(req.file!);
 
     if (!aws) {
@@ -481,9 +548,19 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
       });
     }
 
+    const cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    const cnhFotoPath = aws.Key;
+
+    await usuario.update({
+      cnhFotoUrl,
+      cnhFotoPath,
+    });
+
     return res.status(200).json({
       mensagem: "Foto da CNH enviada com sucesso",
-      url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`,
+      url: cnhFotoUrl,
+      cnhFotoUrl,
+      cnhFotoPath,
     });
   } catch (error: any) {
     console.error("cadastrarFotoCnhUsuario:", error);
@@ -495,24 +572,31 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
 };
 
 const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => {
-    const s3Object = await findS3ById(idUsuario,"image/jpeg") || await findS3ById(idUsuario,"image/png") || await findS3ById(idUsuario,"image/webp");
-    let fotoUrl: string | null = "";
-    if(s3Object) {
-      const fileS3 = await getArquivoS3byID(s3Object.etag);
-      if (fileS3) {
-        fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
-      } else {
-        fotoUrl = null
-      }
+  const s3Object =
+    await findS3ById(idUsuario, "image/jpeg") ||
+    await findS3ById(idUsuario, "image/png") ||
+    await findS3ById(idUsuario, "image/webp");
+
+  let fotoUrl: string | null = "";
+
+  if (s3Object) {
+    const fileS3 = await getArquivoS3byID(s3Object.etag);
+    if (fileS3) {
+      fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
+    } else {
+      fotoUrl = null;
     }
-    return fotoUrl;
-}
+  }
+
+  return fotoUrl;
+};
 
 const getFotoCnhByUsuarioId = async (idUsuario: number): Promise<string | null> => {
   const s3Object =
     await findS3ById(idUsuario, "CNH-image/jpeg") ||
     await findS3ById(idUsuario, "CNH-image/png") ||
-    await findS3ById(idUsuario, "CNH-image/webp");
+    await findS3ById(idUsuario, "CNH-image/webp") ||
+    await findS3ById(idUsuario, "CNH-application/pdf");
 
   let cnhFotoUrl: string | null = "";
 
