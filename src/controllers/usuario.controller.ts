@@ -400,12 +400,6 @@ export const atualizarFotoCnhUsuario = async (req: Request, res: Response) => {
       return res.status(404).json({ erro: "Usuário não encontrado" });
     }
 
-    if (usuario.tipoUsuario !== "motorista") {
-      return res.status(403).json({
-        erro: "Apenas motoristas podem atualizar foto da CNH",
-      });
-    }
-
     await usuario.update({
       ...(typeof cnhFotoUrl !== "undefined" ? { cnhFotoUrl } : {}),
       ...(typeof cnhFotoPath !== "undefined" ? { cnhFotoPath } : {}),
@@ -500,12 +494,6 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
 
     if (!usuario) {
       return res.status(404).json({ erro: "Usuário não encontrado" });
-    }
-
-    if (usuario.tipoUsuario !== "motorista") {
-      return res.status(403).json({
-        erro: "Apenas motoristas podem enviar foto da CNH",
-      });
     }
 
     const file = (req as any).file as {
