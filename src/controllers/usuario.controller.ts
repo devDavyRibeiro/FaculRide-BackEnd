@@ -5,14 +5,15 @@ import dotenv from "dotenv";
 import { enviarEmailBoasVindas } from "../utils/email";
 dotenv.config();
 
+import sequelize from "../config/database";
 import { UsuarioModel } from "../models/usuario.model";
 import { VeiculoModel } from "../models/veiculo.model";
 import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
-import { uploadArquivoS3, getArquivoS3byID, deletarArquivoS3 } from '../utils/s3Client'
-import { insertS3, findS3ById, deleteS3ById,putS3 } from "../utils/moogose";
+import {  uploadArquivoS3,  getArquivoS3byID, deletarArquivoS3  } from "../utils/s3Client";
+import { insertS3,  findS3ById, deleteS3ById,putS3  } from "../utils/moogose";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
@@ -75,6 +76,7 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalizado)) {
     throw new Error("E-mail inválido.");
   }
+
   const emailJaExiste = await UsuarioModel.findOne({ where: { email: emailNormalizado } });
   if (emailJaExiste) {
     throw new Error("E-mail já cadastrado.");
@@ -88,28 +90,51 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
 
   console.log("Criptografando senha: ", usuario.senha);
 
-  // Cria usuário
-  const novoUsuario = await UsuarioModel.create(usuario);
+  const transaction = await sequelize.transaction();
 
-  // Cria veículo se for motorista
-  const veiculo = (usuario as any).veiculo as IVeiculo;
-  if (usuario.tipoUsuario === "motorista" && veiculo) {
-    await VeiculoModel.create({
-      ...veiculo,
-      idUsuario: novoUsuario.idUsuario,
-    });
-  }
+  try {
+    // Cria usuário
+    const novoUsuario = await UsuarioModel.create(usuario, { transaction });
 
-  // Envia boas-vindas (assíncrono)
-  (async () => {
-    try {
-      await enviarEmailBoasVindas(novoUsuario.email, novoUsuario.nome);
-    } catch (e) {
-      console.error("[email boas-vindas] falhou:", e);
+    // Recupera o ID corretamente
+    const idUsuarioCriado = novoUsuario.getDataValue("idUsuario");
+
+    if (!idUsuarioCriado) {
+      throw new Error("ID do usuário não foi gerado após o cadastro.");
     }
-  })();
 
-  return { id: novoUsuario.idUsuario };
+    // Cria veículo se for motorista
+    const veiculo = (usuario as any).veiculo as IVeiculo;
+
+    if (usuario.tipoUsuario === "motorista" && veiculo) {
+      await VeiculoModel.create(
+        {
+          Placa_veiculo: veiculo.Placa_veiculo,
+          Cor: veiculo.Cor,
+          Modelo: veiculo.Modelo,
+          Ano: veiculo.Ano ? Number(veiculo.Ano) : null,
+          idUsuario: idUsuarioCriado,
+        },
+        { transaction }
+      );
+    }
+
+    await transaction.commit();
+
+    // Envia boas-vindas (assíncrono)
+    (async () => {
+      try {
+        await enviarEmailBoasVindas(novoUsuario.email, novoUsuario.nome);
+      } catch (e) {
+        console.error("[email boas-vindas] falhou:", e);
+      }
+    })();
+
+    return { id: idUsuarioCriado };
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 };
 
 // Filtrar usuários
@@ -121,6 +146,7 @@ export const filtrarUsuarios = async (filtros: IusuarioFiltros): Promise<Iusuari
       ...(filtros.tipoUsuario && { tipoUsuario: filtros.tipoUsuario }),
     },
   });
+
   await Promise.all(
     usuarios.map(async (usuario) => {
       const fotoUrl = await getFotoByUsuarioId(usuario.dataValues.idUsuario!);
@@ -143,58 +169,75 @@ export const loginUsuario = async (req: Request, res: Response) => {
     if (!usuario) {
       return res.status(401).json({ erro: "E-mail ou senha inválidos" });
     }
-    usuario = usuario.toJSON() as unknown as UsuarioModel;
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+
+    const idUsuario = usuario.getDataValue("idUsuario");
+    const nome = usuario.getDataValue("nome");
+    const tipoUsuario = usuario.getDataValue("tipoUsuario");
+    const senhaHash = usuario.getDataValue("senha");
+
+    if (!idUsuario) {
+      return res.status(500).json({ erro: "ID do usuário não encontrado" });
+    }
+
+    if (!senhaHash) {
+      return res.status(500).json({ erro: "Senha não encontrada para o usuário" });
+    }
+
+    const senhaValida = await bcrypt.compare(senha, senhaHash);
 
     if (!senhaValida) {
       return res.status(401).json({ erro: "E-mail ou senha inválidos" });
     }
 
     const veiculo = await VeiculoModel.findOne({
-      where: { idUsuario: usuario.idUsuario },
+      where: { idUsuario },
     });
+
+    const fotoUrlMongoS3 = await getFotoByUsuarioId(idUsuario);
+    const cnhFotoUrlMongoS3 = await getFotoCnhByUsuarioId(idUsuario);
 
     const token = jwt.sign(
       {
-        id: usuario.idUsuario,
-        nome: usuario.nome,
-        tipoUsuario: usuario.tipoUsuario,
+        id: idUsuario,
+        nome,
+        tipoUsuario,
       },
       process.env.JWT_SECRET || "secretoo123",
       { expiresIn: "1d" }
     );
 
-    // Cria log de acesso automaticamente no login
     await LogAcessoModel.create({
-      idUsuario: usuario.idUsuario,
+      idUsuario,
       dataAcesso: new Date(),
-      tipoUsuario: usuario.tipoUsuario,
+      tipoUsuario,
     });
 
     return res.status(200).json({
       mensagem: "Login realizado com sucesso",
       token,
       usuario: {
-        id: usuario.idUsuario,
-        nome: usuario.nome,
-        cpf: usuario.cpf,
-        email: usuario.email,
-        telefone: usuario.telefone,
-        cep: usuario.cep,
-        endereco: usuario.endereco,
-        numero: usuario.numero,
-        cidade: usuario.cidade,
-        estado: usuario.estado,
-        fatec: usuario.fatec,
-        ra: usuario.ra,
-        genero: usuario.genero,
-        dataNascimento: usuario.dataNascimento,
-        tipoUsuario: usuario.tipoUsuario,
-        cnh: usuario.cnh ?? null,
-        fotoUrl: usuario.fotoUrl ?? null,
-        fotoPath: usuario.fotoPath ?? null,
-        veiculo: veiculo ? veiculo.toJSON() : null
-      }
+        id: idUsuario,
+        nome,
+        cpf: usuario.getDataValue("cpf"),
+        email: usuario.getDataValue("email"),
+        telefone: usuario.getDataValue("telefone"),
+        cep: usuario.getDataValue("cep"),
+        endereco: usuario.getDataValue("endereco"),
+        numero: usuario.getDataValue("numero"),
+        cidade: usuario.getDataValue("cidade"),
+        estado: usuario.getDataValue("estado"),
+        fatec: usuario.getDataValue("fatec"),
+        ra: usuario.getDataValue("ra"),
+        genero: usuario.getDataValue("genero"),
+        dataNascimento: usuario.getDataValue("dataNascimento"),
+        tipoUsuario,
+        cnh: usuario.getDataValue("cnh") ?? null,
+        fotoUrl: fotoUrlMongoS3 || usuario.getDataValue("fotoUrl") || null,
+        fotoPath: usuario.getDataValue("fotoPath") ?? null,
+        cnhFotoUrl: cnhFotoUrlMongoS3 || usuario.getDataValue("cnhFotoUrl") || null,
+        cnhFotoPath: usuario.getDataValue("cnhFotoPath") ?? null,
+        veiculo: veiculo ? veiculo.toJSON() : null,
+      },
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -207,6 +250,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
 export const buscarUsuarioPorId = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   let fotoUrl: string | null = "";
+  let cnhFotoUrl: string | null = "";
 
   try {
     
@@ -219,8 +263,10 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
     const veiculo = await VeiculoModel.findOne({
       where: { idUsuario: id },
     });
+
     fotoUrl = await getFotoByUsuarioId(id);
-    console.log("Foto URL do usuário:", fotoUrl);
+    cnhFotoUrl = await getFotoCnhByUsuarioId(usuario.idUsuario);
+
     return res.status(200).json({
       id: usuario.dataValues.idUsuario,
       nome: usuario.dataValues.nome,
@@ -238,8 +284,10 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
       dataNascimento: usuario.dataValues.dataNascimento,
       tipoUsuario: usuario.dataValues.tipoUsuario,
       cnh: usuario.dataValues.cnh ?? null,
-      fotoUrl: fotoUrl,
+      fotoUrl: fotoUrl || usuario.dataValues.fotoUrl || null,
       fotoPath: usuario.dataValues.fotoPath ?? null,
+      cnhFotoUrl: cnhFotoUrl || usuario.dataValues.cnhFotoUrl || null,
+      cnhFotoPath: usuario.dataValues.cnhFotoPath ?? null,
       veiculo: veiculo ? veiculo.toJSON() : null,
     });
   } catch (error: any) {
@@ -340,19 +388,75 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
   }
 };
 
+// CnhUrl/CnhPath
+export const atualizarFotoCnhUsuario = async (req: Request, res: Response) => {
+  try {
+    const { cnhFotoUrl, cnhFotoPath } = req.body || {};
+
+    if (!cnhFotoUrl && !cnhFotoPath) {
+      return res.status(400).json({
+        erro: "Envie pelo menos cnhFotoUrl ou cnhFotoPath",
+      });
+    }
+
+    const userCtx = (req as any).user;
+    const idUsuarioAutenticado: number | undefined =
+      userCtx?.id ?? userCtx?.idUsuario;
+
+    if (!idUsuarioAutenticado) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
+
+    const usuario = await UsuarioModel.findByPk(idUsuarioAutenticado);
+
+    if (!usuario) {
+      return res.status(404).json({ erro: "Usuário não encontrado" });
+    }
+
+    await usuario.update({
+      ...(typeof cnhFotoUrl !== "undefined" ? { cnhFotoUrl } : {}),
+      ...(typeof cnhFotoPath !== "undefined" ? { cnhFotoPath } : {}),
+    });
+
+    return res.status(200).json({
+      mensagem: "Foto da CNH atualizada com sucesso",
+    });
+  } catch (error: any) {
+    console.error("Erro ao atualizar foto da CNH:", error);
+
+    return res.status(500).json({
+      erro: error.message || "Erro ao atualizar foto da CNH",
+    });
+  }
+};
+
 // Upload de foto (multipart 'file')
 export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
   try {
-
+    
     const userCtx = (req as any).user;
     const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
+
     if (!idUsuario) {
       return res.status(401).json({ erro: "Usuário não autenticado" });
     }
 
-    const file = (req as any).file as { buffer: Buffer; mimetype: string; size: number; originalname: string } | undefined;
+    const file = (req as any).file as {
+      buffer: Buffer;
+      mimetype: string;
+      size: number;
+      originalname: string;
+    } | undefined;
+
     if (!file) {
       return res.status(400).json({ erro: "Envie um arquivo em 'file' (multipart/form-data)" });
+    }
+
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+    if (!tiposPermitidos.includes(file.mimetype)) {
+      return res.status(400).json({
+        erro: "Formato inválido. Envie uma imagem JPG, PNG ou WEBP.",
+      });
     }
 
     const aws = await uploadArquivoS3(req.file!);
@@ -365,11 +469,25 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
     if (!s3Inserted) {
       return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
     }
+
+    const fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    const fotoPath = aws.Key;
+
+    const usuario = await UsuarioModel.findByPk(idUsuario);
+    if (usuario) {
+      await usuario.update({
+        fotoUrl,
+        fotoPath,
+      });
+    }
+
     console.log("Upload AWS S3 concluído:", s3Inserted);
 
     return res.status(200).json({
       mensagem: "Foto enviada e usuário atualizado com sucesso",
-      url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`
+      url: fotoUrl,
+      fotoUrl,
+      fotoPath,
     });
   } catch (error: any) {
     console.error("uploadFotoUsuario:", error);
@@ -377,10 +495,93 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
   }
 };
 
+// Upload de foto da CNH (multipart 'file')
+export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
+  try {
+    const userCtx = (req as any).user;
+    const idUsuario: number | undefined = userCtx?.id ?? userCtx?.idUsuario;
+
+    if (!idUsuario) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
+
+    const usuario = await UsuarioModel.findByPk(idUsuario);
+
+    if (!usuario) {
+      return res.status(404).json({ erro: "Usuário não encontrado" });
+    }
+
+    const file = (req as any).file as {
+      buffer: Buffer;
+      mimetype: string;
+      size: number;
+      originalname: string;
+    } | undefined;
+
+    if (!file) {
+      return res.status(400).json({
+        erro: "Envie um arquivo em 'file' (multipart/form-data)",
+      });
+    }
+
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!tiposPermitidos.includes(file.mimetype)) {
+      return res.status(400).json({
+        erro: "Formato inválido. Envie JPG, PNG, WEBP ou PDF.",
+      });
+    }
+
+    const aws = await uploadArquivoS3(req.file!);
+
+    if (!aws) {
+      return res.status(500).json({
+        erro: "Falha ao enviar arquivo para AWS S3",
+      });
+    }
+
+    const s3Inserted = await insertS3(
+      idUsuario,
+      aws.ETag!,
+      `CNH-${file.mimetype}`
+    );
+
+    if (!s3Inserted) {
+      return res.status(500).json({
+        erro: "Falha ao salvar informações da CNH no MongoDB",
+      });
+    }
+
+    const cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    const cnhFotoPath = aws.Key;
+
+    await usuario.update({
+      cnhFotoUrl,
+      cnhFotoPath,
+    });
+
+    return res.status(200).json({
+      mensagem: "Foto da CNH enviada com sucesso",
+      url: cnhFotoUrl,
+      cnhFotoUrl,
+      cnhFotoPath,
+    });
+  } catch (error: any) {
+    console.error("cadastrarFotoCnhUsuario:", error);
+
+    return res.status(500).json({
+      erro: error.message || "Erro ao enviar foto da CNH",
+    });
+  }
+};
+
 const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => {
-  const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
+  const s3Object = 
+  await findS3ById(idUsuario, "image/jpeg") || 
+  await findS3ById(idUsuario, "image/png") || 
+  await findS3ById(idUsuario, "image/webp");
+
   let fotoUrl: string | null = "";
-  console.log(`Buscando foto para usuário ${idUsuario} no MongoDB:`, s3Object);
+  
   if (s3Object) {
     fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${s3Object.key}`;
     } 
