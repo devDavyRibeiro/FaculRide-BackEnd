@@ -123,7 +123,7 @@ export const filtrarUsuarios = async (filtros: IusuarioFiltros): Promise<Iusuari
   });
   await Promise.all(
     usuarios.map(async (usuario) => {
-      const fotoUrl = await getFotoByUsuarioId(usuario.idUsuario);
+      const fotoUrl = await getFotoByUsuarioId(usuario.dataValues.idUsuario!);
       usuario.setDataValue('fotoUrl', fotoUrl);
     }));
   return usuarios;
@@ -209,35 +209,37 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
   let fotoUrl: string | null = "";
 
   try {
+    
     const usuario = await UsuarioModel.findByPk(id);
-
+    console.log("Usuário encontrado:", usuario);
     if (!usuario) {
       return res.status(404).json({ erro: "Usuário não encontrado" });
     }
 
     const veiculo = await VeiculoModel.findOne({
-      where: { idUsuario: usuario.idUsuario },
+      where: { idUsuario: id },
     });
-    fotoUrl = await getFotoByUsuarioId(usuario.idUsuario);
+    fotoUrl = await getFotoByUsuarioId(id);
+    console.log("Foto URL do usuário:", fotoUrl);
     return res.status(200).json({
-      id: usuario.idUsuario,
-      nome: usuario.nome,
-      cpf: usuario.cpf,
-      email: usuario.email,
-      telefone: usuario.telefone,
-      cep: usuario.cep,
-      endereco: usuario.endereco,
-      numero: usuario.numero,
-      cidade: usuario.cidade,
-      estado: usuario.estado,
-      fatec: usuario.fatec,
-      ra: usuario.ra,
-      genero: usuario.genero,
-      dataNascimento: usuario.dataNascimento,
-      tipoUsuario: usuario.tipoUsuario,
-      cnh: usuario.cnh ?? null,
+      id: usuario.dataValues.idUsuario,
+      nome: usuario.dataValues.nome,
+      cpf: usuario.dataValues.cpf,
+      email: usuario.dataValues.email,
+      telefone: usuario.dataValues.telefone,
+      cep: usuario.dataValues.cep,
+      endereco: usuario.dataValues.endereco,
+      numero: usuario.dataValues.numero,
+      cidade: usuario.dataValues.cidade,
+      estado: usuario.dataValues.estado,
+      fatec: usuario.dataValues.fatec,
+      ra: usuario.dataValues.ra,
+      genero: usuario.dataValues.genero,
+      dataNascimento: usuario.dataValues.dataNascimento,
+      tipoUsuario: usuario.dataValues.tipoUsuario,
+      cnh: usuario.dataValues.cnh ?? null,
       fotoUrl: fotoUrl,
-      fotoPath: usuario.fotoPath ?? null,
+      fotoPath: usuario.dataValues.fotoPath ?? null,
       veiculo: veiculo ? veiculo.toJSON() : null,
     });
   } catch (error: any) {
@@ -309,14 +311,18 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
       return res.status(404).json({ erro: "Foto do usuário não encontrada" });
     }
     console.log("Foto atual do usuário encontrada no MongoDB:", s3Object);
+    
     await deletarArquivoS3(s3Object.key);
 
     const aws = await uploadArquivoS3(req.file!);
     if (!aws) {
       return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
     }
+    console.log("Upload AWS S3 concluído:", aws);
 
     const s3Put = await putS3(idUsuario, aws.Key!, file.mimetype);
+
+
     if (!s3Put) {
       await deletarArquivoS3(aws.Key!);
       return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
@@ -327,6 +333,7 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
       mensagem: "Foto enviada e usuário atualizado com sucesso",
       url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`
     });
+
     
   }catch(error:any){
 
@@ -354,6 +361,7 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
     }
 
     const s3Inserted = await insertS3(idUsuario, aws.Key!, file.mimetype);
+    console.log("Informações da foto inseridas no MongoDB:", s3Inserted);
     if (!s3Inserted) {
       return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
     }
@@ -372,14 +380,14 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
 const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => {
   const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
   let fotoUrl: string | null = "";
+  console.log(`Buscando foto para usuário ${idUsuario} no MongoDB:`, s3Object);
   if (s3Object) {
-    const fileS3 = await getArquivoS3byID(s3Object.key);
-    if (fileS3) {
-      fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${fileS3.Key}`;
-    } else {
-      fotoUrl = null
+    fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${s3Object.key}`;
+    } 
+  else {
+    fotoUrl = null
     }
-  }
+  console.log(`getFotoByUsuarioId(${idUsuario}) => ${fotoUrl}`);
   return fotoUrl;
 }
 

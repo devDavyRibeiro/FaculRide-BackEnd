@@ -40,6 +40,7 @@ export async function insertS3(id:number,key:string,minytype:string): Promise<bo
         minytype: minytype,
     });
     const savedS3Object = await s3Object.save();
+    console.log("S3Object salvo no MongoDB:", savedS3Object);
     return savedS3Object === savedS3Object 
 }
 
@@ -53,7 +54,7 @@ export async function deleteS3ById(id:number, minytype:string): Promise<boolean>
     return result.deletedCount > 0;
 }
 
-export async function putS3(idUsuario:number, key:string, minytype:string): Promise<boolean> {
+export async function putS3(idUsuario:number, key:string, minytype:string): Promise<any> {
    const result = await S3Object.updateOne({ idUsuario: idUsuario, minytype: minytype, key: key }, { idUsuario: idUsuario });
-    return result.modifiedCount > 0;
+    return result
 }
