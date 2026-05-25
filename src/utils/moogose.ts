@@ -55,6 +55,6 @@ export async function deleteS3ById(id:number, minytype:string): Promise<boolean>
 }
 
 export async function putS3(idUsuario:number, key:string, minytype:string): Promise<any> {
-   const result = await S3Object.updateOne({ idUsuario: idUsuario, minytype: minytype, key: key }, { idUsuario: idUsuario });
-    return result
+    const put = await S3Object.findOneAndUpdate({idUsuario: idUsuario}, {key: key, minytype: minytype},{returnDocument: 'after'});
+    return put;
 }
