@@ -285,6 +285,45 @@ export const swaggerDocument = {
       },
     },
 
+    "/usuario/foto/delete": {
+      delete: {
+        summary: "Deletar foto do usuário autenticado",
+        description: "Deletar foto associada ao usuário identificado via JWT",
+        tags: ["Usuário"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "Foto deletada com sucesso" },
+          404: { description: "Nenhuma foto encontrada para deletar" },
+          500: { description: "Erro ao deletar foto" },
+          401: { description: "Token inválido ou não informado" },
+        },
+      },
+    },
+
+    "/usuario/foto/update": {
+      put: {
+        summary: "Atualizar foto do usuário autenticado",
+        description: "Atualizar foto associada ao usuário identificado via JWT",
+        tags: ["Usuário"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UserFileUpdate" },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Foto atualizada com sucesso" },
+          400: { description: "Arquivo não enviado" },
+          401: { description: "Token inválido ou não informado" },
+          404: { description: "Nenhuma foto encontrada para atualizar" },
+          500: { description: "Erro ao atualizar foto" },
+        },
+      },
+    },
+
     // Veículo
     "/veiculo": {
       get: {
