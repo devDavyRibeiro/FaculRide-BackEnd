@@ -541,7 +541,7 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
 
     const s3Inserted = await insertS3(
       idUsuario,
-      aws.ETag!,
+      aws.Key!,
       `CNH-${file.mimetype}`
     );
 
@@ -665,4 +665,22 @@ export const deletarFotoUsuario = async (req: Request, res: Response) => {
     console.error("Erro ao deletar foto do usuário:", error);
     return res.status(500).json({ erro: error.message || "Erro ao deletar foto" });
   }
+}
+
+const getFotoCnhByUsuarioId = async (idUsuario: number): Promise<string | null> => {
+  const s3Object =
+    await findS3ById(idUsuario, "CNH-image/jpeg") ||
+    await findS3ById(idUsuario, "CNH-image/png") ||
+    await findS3ById(idUsuario, "CNH-image/webp");
+
+  let cnhFotoUrl: string | null = "";
+
+  if (s3Object) {
+      cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${s3Object.key}`;
+  }
+  else{
+    cnhFotoUrl = null;
+  }
+
+  return cnhFotoUrl;
 }
