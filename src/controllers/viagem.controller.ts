@@ -12,7 +12,7 @@ export const listAll = async (): Promise<Iviagem[]> => {
       {
         model: UsuarioModel,
         as: 'usuario',
-        attributes: ['nome', 'email', 'telefone', 'genero']
+        attributes: ['nome', 'email', 'telefone', 'genero', 'fotoUrl']
       },
       // Inclusão agendamentos da viagem (se existirem)
       {
