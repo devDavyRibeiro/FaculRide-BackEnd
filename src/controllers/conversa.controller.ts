@@ -9,31 +9,40 @@ import { ViagemModel } from "../models/viagem.model";
 export const iniciarConversa = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const idPassageiro = user?.id ?? user?.idUsuario;
+    const idPassageiro = Number(user?.id ?? user?.idUsuario);
 
     const { idViagem } = req.body;
+    const idViagemNumero = Number(idViagem);
 
-    if (!idPassageiro || !idViagem) {
+    if (!idPassageiro || !idViagemNumero) {
       return res.status(400).json({ erro: "Dados inválidos" });
     }
 
-    const viagem = await ViagemModel.findByPk(idViagem);
+    const viagem = await ViagemModel.findByPk(idViagemNumero);
 
     if (!viagem) {
       return res.status(404).json({ erro: "Viagem não encontrada" });
     }
 
+    const viagemJson = viagem.toJSON() as any;
+
     // Não permite iniciar conversa em viagem cancelada
-    if (viagem.cancelada) {
+    if (viagemJson.cancelada) {
       return res.status(400).json({ erro: "Não é possível iniciar conversa em uma viagem cancelada" });
     }
 
-    const idMotorista = viagem.idUsuario;
+    const idMotorista = Number(
+      viagem.getDataValue("idUsuario") ?? viagemJson.idUsuario
+    );
+
+    if (!idMotorista) {
+      return res.status(400).json({ erro: "Motorista da viagem não encontrado" });
+    }
 
     // 1) tenta achar uma conversa já existente
     const conversaExistente = await ConversaCaronaModel.findOne({
       where: {
-        idViagem,
+        idViagem: idViagemNumero,
         idMotorista,
         idPassageiro,
       },
@@ -70,7 +79,7 @@ export const iniciarConversa = async (req: Request, res: Response) => {
     try {
       // 2) cria a conversa
       novaConversa = await ConversaCaronaModel.create({
-        idViagem,
+        idViagem: idViagemNumero,
         idMotorista,
         idPassageiro,
       });
@@ -79,7 +88,7 @@ export const iniciarConversa = async (req: Request, res: Response) => {
       // Nesse caso, buscamos a conversa já criada e devolvemos normalmente.
       const conversaRecuperada = await ConversaCaronaModel.findOne({
         where: {
-          idViagem,
+          idViagem: idViagemNumero,
           idMotorista,
           idPassageiro,
         },
