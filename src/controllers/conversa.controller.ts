@@ -124,8 +124,13 @@ export const iniciarConversa = async (req: Request, res: Response) => {
     }
 
     // 3) mensagem automática inicial
+    const idConversaNova = Number(
+      novaConversa.getDataValue("idConversa") ??
+      (novaConversa as any).idConversa
+    );
+
     await MensagemConversaModel.create({
-      idConversa: novaConversa.idConversa,
+      idConversa: idConversaNova,
       idRemetente: idPassageiro,
       mensagem: "Oi! Tenho interesse na sua carona. Podemos alinhar os detalhes?",
     });
@@ -277,7 +282,12 @@ export const aceitarCarona = async (req: Request, res: Response) => {
       return res.status(404).json({ erro: "Conversa não encontrada" });
     }
 
-    const viagem = await ViagemModel.findByPk(conversa.idViagem);
+    const idViagemConversa = Number(
+      conversa.getDataValue("idViagem") ??
+      (conversa as any).idViagem
+    );
+
+    const viagem = await ViagemModel.findByPk(idViagemConversa);
 
     if (!viagem) {
       return res.status(404).json({ erro: "Viagem não encontrada" });
