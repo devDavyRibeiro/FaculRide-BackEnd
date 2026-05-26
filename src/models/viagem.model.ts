@@ -5,17 +5,17 @@ import { Iviagem } from "../interfaces/Iviagem";
 type ViagemCreationAttributes = Optional<Iviagem, "idViagem">;
 
 export class ViagemModel extends Model<Iviagem, ViagemCreationAttributes> implements Iviagem {
-  public idViagem!: number;
-  public tipoUsuario!: string;
-  public partida!: string;
-  public destino!: string;
-  public horarioEntrada!: string;
-  public horarioSaida!: string;
-  public ajudaDeCusto!: string;
-  public idUsuario!: number;
-  public cancelada!: boolean;
-  public canceladaPor!: number | null;
-  public dataCancelamento!: Date | null;
+  declare idViagem: number;
+  declare tipoUsuario: string;
+  declare partida: string;
+  declare destino: string;
+  declare horarioEntrada: string;
+  declare horarioSaida: string;
+  declare ajudaDeCusto: string;
+  declare idUsuario: number;
+  declare cancelada: boolean;
+  declare canceladaPor: number | null;
+  declare dataCancelamento: Date | null;
 }
 
 ViagemModel.init(

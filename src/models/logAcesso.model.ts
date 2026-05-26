@@ -5,10 +5,10 @@ import sequelize from "../config/database";
 type LogAcessoCreationAttributes = Optional<ILogAcesso, "idLogAcesso">;
 
 export class LogAcessoModel extends Model<ILogAcesso, LogAcessoCreationAttributes> implements ILogAcesso {
-  public idLogAcesso!: number;
-  public idUsuario!: number;
-  public dataAcesso!: Date;
-  public tipoUsuario!: "passageiro" | "motorista";
+  declare idLogAcesso: number;
+  declare idUsuario: number;
+  declare dataAcesso: Date;
+  declare tipoUsuario: "passageiro" | "motorista";
 }
 
 LogAcessoModel.init(

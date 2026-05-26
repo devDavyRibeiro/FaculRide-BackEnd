@@ -8,27 +8,27 @@ type UsuarioCreationalAttributes = Optional<
 >;
 
 export class UsuarioModel extends Model<Iusuario, UsuarioCreationalAttributes> {
-  public idUsuario!: number;
-  public nome!: string;
-  public cpf!: string;
-  public ra!: string;
-  public dataNascimento!: Date;
-  public genero!: boolean;
-  public cep!: string;
-  public endereco!: string;
-  public numero!: string;
-  public cidade!: string;
-  public estado!: string;
-  public email!: string;
-  public telefone!: string;
-  public senha!: string;
-  public tipoUsuario!: "passageiro" | "motorista";
-  public cnh?: string;
-  public fatec!: string;
-  public fotoUrl?: string | null;
-  public fotoPath?: string | null;
-  public cnhFotoUrl?: string | null;
-  public cnhFotoPath?: string | null;
+  declare idUsuario: number;
+  declare nome: string;
+  declare cpf: string;
+  declare ra: string;
+  declare dataNascimento: Date;
+  declare genero: boolean;
+  declare cep: string;
+  declare endereco: string;
+  declare numero: string;
+  declare cidade: string;
+  declare estado: string;
+  declare email: string;
+  declare telefone: string;
+  declare senha: string;
+  declare tipoUsuario: "passageiro" | "motorista";
+  declare cnh?: string;
+  declare fatec: string;
+  declare fotoUrl?: string | null;
+  declare fotoPath?: string | null;
+  declare cnhFotoUrl?: string | null;
+  declare cnhFotoPath?: string | null;
 }
 
 UsuarioModel.init(

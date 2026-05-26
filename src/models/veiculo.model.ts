@@ -5,12 +5,12 @@ import { IVeiculo } from "../interfaces/Iveiculo";
 type VeiculoCreationAttributes = Optional<IVeiculo, "ID_veiculo">;
 
 export class VeiculoModel extends Model<IVeiculo, VeiculoCreationAttributes> {
-  public ID_veiculo!: number;
-  public Placa_veiculo?: string;
-  public Cor!: string;
-  public Modelo!: string;
-  public Ano?: number;
-  public idUsuario!: number;
+  declare ID_veiculo: number;
+  declare Placa_veiculo?: string;
+  declare Cor: string;
+  declare Modelo: string;
+  declare Ano?: number;
+  declare idUsuario: number;
 }
 
 VeiculoModel.init({
