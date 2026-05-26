@@ -12,7 +12,7 @@ export const listAll = async (): Promise<Iviagem[]> => {
       {
         model: UsuarioModel,
         as: 'usuario',
-        attributes: ['nome', 'email', 'telefone', 'genero']
+        attributes: ['nome', 'email', 'telefone', 'genero', 'fotoUrl']
       },
       // Inclusão agendamentos da viagem (se existirem)
       {
@@ -59,16 +59,19 @@ export const create = async (
   dados: Iviagem & { datasAgendadas?: string[] }
 ): Promise<Iviagem> => {
 
-  // Se vier datasAgendadas no body, separamos
   const { datasAgendadas, ...dadosViagem } = dados as any;
 
-  // Cria a viagem normalmente (como já fazia antes)
   const viagem = await ViagemModel.create(dadosViagem as Iviagem);
 
-  // Se tiver datasAgendadas, cria registros em viajem_agendada
+  const idViagemCriada = viagem.getDataValue("idViagem");
+
+  if (!idViagemCriada) {
+    throw new Error("ID da viagem não foi gerado após o cadastro.");
+  }
+
   if (datasAgendadas && Array.isArray(datasAgendadas) && datasAgendadas.length) {
     const registros = datasAgendadas.map((dataISO) => ({
-      idViagem: viagem.idViagem,
+      idViagem: idViagemCriada,
       data: dataISO
     }));
 
