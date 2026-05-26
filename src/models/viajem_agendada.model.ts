@@ -8,11 +8,11 @@ export class ViajemAgendadaModel
   extends Model<IViajemAgendada, ViajemAgendadaCreationAttributes>
   implements IViajemAgendada
 {
-  public idAgendamento!: number;
-  public idViagem!: number;
-  public data!: string;
-  public createdAt?: Date;
-  public updatedAt?: Date;
+  declare idAgendamento: number;
+  declare idViagem: number;
+  declare data: string;
+  declare createdAt?: Date;
+  declare updatedAt?: Date;
 }
 
 ViajemAgendadaModel.init(
