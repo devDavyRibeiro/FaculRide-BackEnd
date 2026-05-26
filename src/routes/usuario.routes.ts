@@ -8,6 +8,8 @@ import {
   deletarUsuario,
   atualizarFotoUsuario,
   cadastrarFotoUsuario,
+  cadastrarFotoCnhUsuario,
+  deletarFotoUsuario,
   alterarSenha
 } from "../controllers/usuario.controller";
 import { Iusuario, IusuarioFiltros } from "../interfaces/Iusuario";
@@ -81,4 +83,15 @@ router.post("/foto/upload", upload.single("file"), (req, res) => {
   cadastrarFotoUsuario(req, res);
 });
 
+router.post("/cnh/upload", upload.single("file"), (req, res) => {
+  cadastrarFotoCnhUsuario(req, res);
+});
+
+router.delete("/foto/delete", (req, res) => {
+  deletarFotoUsuario(req, res);
+});
+
+router.put("/foto/update", upload.single("file"), (req, res) => {
+  atualizarFotoUsuario(req, res);
+})
 export default router;
