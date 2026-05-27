@@ -9,6 +9,7 @@ import {
   atualizarFotoUsuario,
   cadastrarFotoUsuario,
   cadastrarFotoCnhUsuario,
+  validarCnhUsuario,
   deletarFotoUsuario,
   alterarSenha
 } from "../controllers/usuario.controller";
@@ -85,6 +86,10 @@ router.post("/foto/upload", upload.single("file"), (req, res) => {
 
 router.post("/cnh/upload", upload.single("file"), (req, res) => {
   cadastrarFotoCnhUsuario(req, res);
+});
+
+router.patch("/cnh/validar/:id", (req, res) => {
+  validarCnhUsuario(req, res);
 });
 
 router.delete("/foto/delete", (req, res) => {
