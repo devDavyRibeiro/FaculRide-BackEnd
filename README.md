@@ -135,10 +135,11 @@ http://localhost:3000/api-docs
 ---
 
 ## 💻 Desenvolvido por
-Breno Jose Da Silva, 3011392413025
-Gabriel Ribeiro Correa, 3011392413032
-Herivelton Henrique Gonçalves, 3011392413011
-Wendel Augusto Lopes Vasco, 3011392413035
+Breno Jose Da Silva, 3011392413025  
+Gabriel Ribeiro Correa, 3011392413032  
+Herivelton Henrique Gonçalves, 3011392413011  
+Wendel Augusto Lopes Vasco, 3011392413035  
+Ryan Carlo Negretti Pereira, 3011392413028  
 
 
 
