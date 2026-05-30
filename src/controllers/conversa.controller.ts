@@ -4,6 +4,8 @@ import { ConversaCaronaModel } from "../models/conversa_carona.model";
 import { MensagemConversaModel } from "../models/mensagem_conversa.model";
 import { UsuarioModel } from "../models/usuario.model";
 import { ViagemModel } from "../models/viagem.model";
+import { NotificationModel } from "../models/notification.model";
+import { getIO } from "../config/socket";
 
 const buscarConversaCompleta = async (idConversa: number) => {
   return ConversaCaronaModel.findByPk(idConversa, {
@@ -235,6 +237,47 @@ export const enviarMensagem = async (req: Request, res: Response) => {
       idRemetente,
       mensagem: mensagem.trim(),
     });
+
+    try {
+      const conversaJson = conversa.toJSON() as any;
+
+      const idMotorista = Number(
+        conversa.getDataValue("idMotorista") ?? conversaJson.idMotorista
+      );
+
+      const idPassageiro = Number(
+        conversa.getDataValue("idPassageiro") ?? conversaJson.idPassageiro
+      );
+
+      const idDestinatario =
+        idRemetente === idMotorista ? idPassageiro : idMotorista;
+
+      if (idDestinatario && idDestinatario !== idRemetente) {
+        const remetente = await UsuarioModel.findByPk(idRemetente);
+
+        const notificacao = await NotificationModel.create({
+          userId: idDestinatario,
+          type: "mensagem",
+          title: "Nova mensagem",
+          message: `${remetente?.getDataValue("nome") || "Alguém"} enviou uma mensagem para você.`,
+          metadata: {
+            idConversa: idConversaNumero,
+            idViagem: conversaJson.idViagem,
+            idRemetente,
+            mensagem: mensagem.trim(),
+          },
+          isRead: false,
+        });
+
+        try {
+          getIO().to(`user:${idDestinatario}`).emit("notification:new", notificacao);
+        } catch (socketError) {
+          console.warn("Notificação criada, mas socket não emitiu:", socketError);
+        }
+      }
+    } catch (notificationError) {
+      console.warn("Mensagem enviada, mas notificação falhou:", notificationError);
+    }
 
     return res.status(201).json(novaMensagem);
   } catch (error: any) {
