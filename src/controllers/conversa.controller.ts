@@ -365,6 +365,77 @@ export const aceitarCarona = async (req: Request, res: Response) => {
       conversa.setDataValue("status", "aguardando_confirmacao");
     }
 
+    try {
+      const motoristaId = Number(conversa.getDataValue("idMotorista") ?? idMotorista);
+      const passageiroId = Number(conversa.getDataValue("idPassageiro") ?? idPassageiro);
+
+      const usuarioAtualId = Number(idUsuario);
+      const outroUsuarioId = usuarioAtualId === motoristaId ? passageiroId : motoristaId;
+
+      const usuarioAtual = await UsuarioModel.findByPk(usuarioAtualId);
+      const nomeUsuarioAtual =
+        usuarioAtual?.getDataValue("nome") ||
+        (user as any)?.nome ||
+        "O outro participante";
+
+      if (aceiteMotorista && aceitePassageiro) {
+        const notificacaoMotorista = await NotificationModel.create({
+          userId: motoristaId,
+          type: "carona_confirmada",
+          title: "Carona confirmada",
+          message: "Os dois participantes aceitaram a carona.",
+          metadata: {
+            idConversa,
+            idViagem: idViagemConversa,
+            status: "aceita",
+          },
+          isRead: false,
+        });
+
+        const notificacaoPassageiro = await NotificationModel.create({
+          userId: passageiroId,
+          type: "carona_confirmada",
+          title: "Carona confirmada",
+          message: "Os dois participantes aceitaram a carona.",
+          metadata: {
+            idConversa,
+            idViagem: idViagemConversa,
+            status: "aceita",
+          },
+          isRead: false,
+        });
+
+        try {
+          getIO().to(`user:${motoristaId}`).emit("notification:new", notificacaoMotorista);
+          getIO().to(`user:${passageiroId}`).emit("notification:new", notificacaoPassageiro);
+        } catch (socketError) {
+          console.warn("Notificação de aceite criada, mas socket não emitiu:", socketError);
+        }
+      } else if (outroUsuarioId && outroUsuarioId !== usuarioAtualId) {
+        const notificacao = await NotificationModel.create({
+          userId: outroUsuarioId,
+          type: "carona_confirmacao_pendente",
+          title: "Confirmação pendente",
+          message: `${nomeUsuarioAtual} aceitou a carona. Falta sua confirmação.`,
+          metadata: {
+            idConversa,
+            idViagem: idViagemConversa,
+            idUsuarioAceitou: usuarioAtualId,
+            status: "aguardando_confirmacao",
+          },
+          isRead: false,
+        });
+
+        try {
+          getIO().to(`user:${outroUsuarioId}`).emit("notification:new", notificacao);
+        } catch (socketError) {
+          console.warn("Notificação de aceite criada, mas socket não emitiu:", socketError);
+        }
+      }
+    } catch (notificationError) {
+      console.warn("Aceite registrado, mas notificação falhou:", notificationError);
+    }
+
     await conversa.save();
 
     const conversaCompleta = await buscarConversaCompleta(idConversa);
