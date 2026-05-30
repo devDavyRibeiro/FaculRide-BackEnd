@@ -28,27 +28,6 @@ const buscarConversaCompleta = async (idConversa: number) => {
   });
 };
 
-const buscarConversaCompleta = async (idConversa: number) => {
-  return ConversaCaronaModel.findByPk(idConversa, {
-    include: [
-      {
-        model: ViagemModel,
-        as: "viagem",
-      },
-      {
-        model: UsuarioModel,
-        as: "motorista",
-        attributes: { exclude: ["senha"] },
-      },
-      {
-        model: UsuarioModel,
-        as: "passageiro",
-        attributes: { exclude: ["senha"] },
-      },
-    ],
-  });
-};
-
 // ================= INICIAR CONVERSA =================
 export const iniciarConversa = async (req: Request, res: Response) => {
   try {
