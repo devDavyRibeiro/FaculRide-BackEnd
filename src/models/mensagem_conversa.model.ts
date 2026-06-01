@@ -20,14 +20,14 @@ export class MensagemConversaModel
   extends Model<IMensagemConversa, MensagemCreationAttributes>
   implements IMensagemConversa
 {
-  public idMensagem!: number;
-  public idConversa!: number;
-  public idRemetente!: number;
-  public mensagem!: string;
-  public lida!: boolean;
+  declare idMensagem: number;
+  declare idConversa: number;
+  declare idRemetente: number;
+  declare mensagem: string;
+  declare lida: boolean;
 
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 MensagemConversaModel.init(

@@ -8,15 +8,15 @@ export class NotificationModel
   extends Model<INotification, CreationAttrs>
   implements INotification
 {
-  public id!: number;
-  public userId!: number;
-  public type!: string;
-  public title!: string;
-  public message!: string;
-  public metadata?: any;
-  public isRead!: boolean;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare id: number;
+  declare userId: number;
+  declare type: string;
+  declare title: string;
+  declare message: string;
+  declare metadata?: any;
+  declare isRead: boolean;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 NotificationModel.init(

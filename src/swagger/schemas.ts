@@ -364,6 +364,46 @@ export const swaggerDocument = {
     },
   },
 },
+
+    "/usuario/cnh/validar/{id}": {
+      patch: {
+        summary: "Validar CNH do motorista",
+        description:
+          "Valida a CNH do motorista e dispara um e-mail via AWS Lambda",
+        tags: ["Usuário"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "integer" },
+            description: "ID do usuário motorista",
+          },
+        ],
+        responses: {
+          200: {
+            description: "CNH validada com sucesso e e-mail enviado",
+          },
+          400: {
+            description: "ID do usuário inválido",
+          },
+          401: {
+            description: "Token inválido ou não informado",
+          },
+          403: {
+            description: "Apenas motoristas podem ter CNH validada",
+          },
+          404: {
+            description: "Usuário não encontrado",
+          },
+          500: {
+            description: "Erro ao validar CNH",
+          },
+        },
+      },
+    },
+
     // Veículo
     "/veiculo": {
       get: {

@@ -22,16 +22,16 @@ export class ConversaCaronaModel
   extends Model<IConversaCarona, ConversaCreationAttributes>
   implements IConversaCarona
 {
-  public idConversa!: number;
-  public idViagem!: number;
-  public idMotorista!: number;
-  public idPassageiro!: number;
-  public status!: string;
-  public aceiteMotorista!: boolean;
-  public aceitePassageiro!: boolean;
+  declare idConversa: number;
+  declare idViagem: number;
+  declare idMotorista: number;
+  declare idPassageiro: number;
+  declare status: string;
+  declare aceiteMotorista: boolean;
+  declare aceitePassageiro: boolean;
 
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 ConversaCaronaModel.init(

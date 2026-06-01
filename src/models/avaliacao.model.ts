@@ -8,12 +8,12 @@ export class AvaliacaoModel
   extends Model<IAvaliacao, AvaliacaoCreationAttributes>
   implements IAvaliacao
 {
-  public ID_Avaliacao!: number;
-  public ID_Avaliador!: number;
-  public ID_Avaliado!: number;
-  public ID_Viagem!: number;
-  public Comentario!: string;
-  public Estrelas!: number;
+  declare ID_Avaliacao: number;
+  declare ID_Avaliador: number;
+  declare ID_Avaliado: number;
+  declare ID_Viagem: number;
+  declare Comentario: string;
+  declare Estrelas: number;
 }
 
 AvaliacaoModel.init(
