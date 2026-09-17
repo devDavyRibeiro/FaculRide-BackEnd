@@ -404,9 +404,28 @@ export const atualizarFotoCnhUsuario = async (req: Request, res: Response) => {
     }
 
     const usuario = await UsuarioModel.findByPk(idUsuario);
+    
+    if (usuario.tipoUsuario !== "motorista") {
+      return res.status(403).json({
+        erro: "Apenas motoristas podem atualizar foto da CNH",
+      });
+    }
+    
 
-    if (!usuario) {
-      return res.status(404).json({ erro: "Usuário não encontrado" });
+    if (!s3Object) {
+      return res.status(404).json({
+        erro: "Foto da CNH não encontrada",
+      });
+    }
+
+    await deletarArquivoS3(s3Object.key);
+
+    const aws = await uploadArquivoS3(req.file!);
+
+    if (!aws) {
+      return res.status(500).json({
+        erro: "Falha ao enviar nova CNH para AWS S3",
+      });
     }
 
     if (usuario.tipoUsuario !== "motorista") {
