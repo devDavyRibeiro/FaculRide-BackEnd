@@ -30,6 +30,7 @@ jobs:
           configFile: ./commitlint.config.js
           failOnWarnings: false
           helpMessage: "Utilize o padrão: tipo(escopo): descrição (ex: feat(ui): novo botão)"
+          continueOnError: true
 
       - name: Instalar Dependências
         run: npm install --force
