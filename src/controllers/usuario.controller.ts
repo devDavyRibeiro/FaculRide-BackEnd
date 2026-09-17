@@ -12,8 +12,7 @@ import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { supabaseAdmin } from "../config/supabase";
-import {  uploadArquivoS3,  getArquivoS3byID, deletarArquivoS3  } from "../utils/s3Client";
-import { insertS3,  findS3ById, deleteS3ById,putS3  } from "../utils/moogose";
+// import {  uploadArquivoS3,  getArquivoS3byID, deletarArquivoS3  } from "../utils/s3Client";
 import { enviarEmailCnhValidada } from "../utils/lambdaEmail";
 
 // Validação de senha forte
@@ -194,8 +193,8 @@ export const loginUsuario = async (req: Request, res: Response) => {
       where: { idUsuario },
     });
 
-    const fotoUrlMongoS3 = await getFotoByUsuarioId(idUsuario);
-    const cnhFotoUrlMongoS3 = await getFotoCnhByUsuarioId(idUsuario);
+    // const fotoUrlMongoS3 = await getFotoByUsuarioId(idUsuario);
+    // const cnhFotoUrlMongoS3 = await getFotoCnhByUsuarioId(idUsuario);
 
     const token = jwt.sign(
       {
@@ -233,11 +232,15 @@ export const loginUsuario = async (req: Request, res: Response) => {
         dataNascimento: usuario.getDataValue("dataNascimento"),
         tipoUsuario,
         cnh: usuario.getDataValue("cnh") ?? null,
-        fotoUrl: fotoUrlMongoS3 || usuario.getDataValue("fotoUrl") || null,
+        fotoUrl: usuario.getDataValue("fotoUrl") || null,
         fotoPath: usuario.getDataValue("fotoPath") ?? null,
-        cnhFotoUrl: cnhFotoUrlMongoS3 || usuario.getDataValue("cnhFotoUrl") || null,
+        cnhFotoUrl: usuario.getDataValue("cnhFotoUrl") || null,
         cnhFotoPath: usuario.getDataValue("cnhFotoPath") ?? null,
         veiculo: veiculo ? veiculo.toJSON() : null,
+        // fotoUrl: fotoUrlMongoS3 || usuario.getDataValue("fotoUrl") || null,
+        // fotoPath: usuario.getDataValue("fotoPath") ?? null,
+        // cnhFotoUrl: cnhFotoUrlMongoS3 || usuario.getDataValue("cnhFotoUrl") || null,
+        // cnhFotoPath: usuario.getDataValue("cnhFotoPath") ?? null,
       },
     });
   } catch (error: any) {
@@ -355,32 +358,32 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
       return res.status(400).json({ erro: "Envie um arquivo em 'file' (multipart/form-data)" });
     }
     
-    const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
-    if (!s3Object) {
-      return res.status(404).json({ erro: "Foto do usuário não encontrada" });
-    }
-    console.log("Foto atual do usuário encontrada no MongoDB:", s3Object);
+    // const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
+    // if (!s3Object) {
+    //   return res.status(404).json({ erro: "Foto do usuário não encontrada" });
+    // }
+    // console.log("Foto atual do usuário encontrada no MongoDB:", s3Object);
     
-    await deletarArquivoS3(s3Object.key);
+    // await deletarArquivoS3(s3Object.key);
 
-    const aws = await uploadArquivoS3(req.file!);
-    if (!aws) {
-      return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
-    }
-    console.log("Upload AWS S3 concluído:", aws);
+    // const aws = await uploadArquivoS3(req.file!);
+    // if (!aws) {
+    //   return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
+    // }
+    // console.log("Upload AWS S3 concluído:", aws);
 
-    const s3Put = await putS3(idUsuario, aws.Key!, file.mimetype);
+    // const s3Put = await putS3(idUsuario, aws.Key!, file.mimetype);
 
 
-    if (!s3Put) {
-      await deletarArquivoS3(aws.Key!);
-      return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
-    }
-    console.log("Upload AWS S3 concluído:", s3Put);
+    // if (!s3Put) {
+    //   await deletarArquivoS3(aws.Key!);
+    //   return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
+    // }
+    // console.log("Upload AWS S3 concluído:", s3Put);
 
     return res.status(200).json({
       mensagem: "Foto enviada e usuário atualizado com sucesso",
-      url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`
+      //url: `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`
     });
 
     
@@ -438,53 +441,53 @@ export const atualizarFotoCnhUsuario = async (req: Request, res: Response) => {
       });
     }
 
-    const s3Object =
-      (await findS3ById(idUsuario, "CNH-image/jpeg")) ||
-      (await findS3ById(idUsuario, "CNH-image/png")) ||
-      (await findS3ById(idUsuario, "CNH-image/webp")) ||
-      (await findS3ById(idUsuario, "CNH-application/pdf"));
+    // const s3Object =
+    //   (await findS3ById(idUsuario, "CNH-image/jpeg")) ||
+    //   (await findS3ById(idUsuario, "CNH-image/png")) ||
+    //   (await findS3ById(idUsuario, "CNH-image/webp")) ||
+    //   (await findS3ById(idUsuario, "CNH-application/pdf"));
 
-    if (!s3Object) {
-      return res.status(404).json({
-        erro: "Foto da CNH não encontrada",
-      });
-    }
+    // if (!s3Object) {
+    //   return res.status(404).json({
+    //     erro: "Foto da CNH não encontrada",
+    //   });
+    // }
 
-    await deletarArquivoS3(s3Object.key);
+    // await deletarArquivoS3(s3Object.key);
 
-    const aws = await uploadArquivoS3(req.file!);
+    // const aws = await uploadArquivoS3(req.file!);
 
-    if (!aws) {
-      return res.status(500).json({
-        erro: "Falha ao enviar nova CNH para AWS S3",
-      });
-    }
+    // if (!aws) {
+    //   return res.status(500).json({
+    //     erro: "Falha ao enviar nova CNH para AWS S3",
+    //   });
+    // }
 
     const tipoCnh = `CNH-${file.mimetype}`;
 
-    const s3Put = await putS3(idUsuario, aws.Key!, tipoCnh);
+    // const s3Put = await putS3(idUsuario, aws.Key!, tipoCnh);
 
-    if (!s3Put) {
-      await deletarArquivoS3(aws.Key!);
+    // if (!s3Put) {
+    //   await deletarArquivoS3(aws.Key!);
 
-      return res.status(500).json({
-        erro: "Falha ao atualizar informações da CNH no MongoDB",
-      });
-    }
+    //   return res.status(500).json({
+    //     erro: "Falha ao atualizar informações da CNH no MongoDB",
+    //   });
+    // }
 
-    const cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
-    const cnhFotoPath = aws.Key;
+    // const cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    // const cnhFotoPath = aws.Key;
 
-    await usuario.update({
-      cnhFotoUrl,
-      cnhFotoPath,
-    });
+    // await usuario.update({
+    //   cnhFotoUrl,
+    //   cnhFotoPath,
+    // });
 
     return res.status(200).json({
       mensagem: "Foto da CNH atualizada com sucesso",
-      url: cnhFotoUrl,
-      cnhFotoUrl,
-      cnhFotoPath,
+      // url: cnhFotoUrl,
+      // cnhFotoUrl,
+      // cnhFotoPath,
     });
   } catch (error: any) {
     console.error("Erro ao atualizar foto da CNH:", error);
@@ -558,35 +561,35 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
       });
     }
 
-    const aws = await uploadArquivoS3(req.file!);
-    if (!aws) {
-      return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
-    }
+    // const aws = await uploadArquivoS3(req.file!);
+    // if (!aws) {
+    //   return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
+    // }
 
-    const s3Inserted = await insertS3(idUsuario, aws.Key!, file.mimetype);
-    console.log("Informações da foto inseridas no MongoDB:", s3Inserted);
-    if (!s3Inserted) {
-      return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
-    }
+    // const s3Inserted = await insertS3(idUsuario, aws.Key!, file.mimetype);
+    // console.log("Informações da foto inseridas no MongoDB:", s3Inserted);
+    // if (!s3Inserted) {
+    //   return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
+    // }
 
-    const fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
-    const fotoPath = aws.Key;
+    // const fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    // const fotoPath = aws.Key;
 
     const usuario = await UsuarioModel.findByPk(idUsuario);
-    if (usuario) {
-      await usuario.update({
-        fotoUrl,
-        fotoPath,
-      });
-    }
+    // if (usuario) {
+    //   await usuario.update({
+    //     fotoUrl,
+    //     fotoPath,
+    //   });
+    // }
 
-    console.log("Upload AWS S3 concluído:", s3Inserted);
+   // console.log("Upload AWS S3 concluído:", s3Inserted);
 
     return res.status(200).json({
       mensagem: "Foto enviada e usuário atualizado com sucesso",
-      url: fotoUrl,
-      fotoUrl,
-      fotoPath,
+      // url: fotoUrl,
+      // fotoUrl,
+      // fotoPath,
     });
   } catch (error: any) {
     console.error("uploadFotoUsuario:", error);
@@ -634,39 +637,39 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
       });
     }
 
-    const aws = await uploadArquivoS3(req.file!);
+    // const aws = await uploadArquivoS3(req.file!);
 
-    if (!aws) {
-      return res.status(500).json({
-        erro: "Falha ao enviar arquivo para AWS S3",
-      });
-    }
+    // if (!aws) {
+    //   return res.status(500).json({
+    //     erro: "Falha ao enviar arquivo para AWS S3",
+    //   });
+    // }
 
-    const s3Inserted = await insertS3(
-      idUsuario,
-      aws.Key!,
-      `CNH-${file.mimetype}`
-    );
+    // const s3Inserted = await insertS3(
+    //   idUsuario,
+    //   aws.Key!,
+    //   `CNH-${file.mimetype}`
+    // );
 
-    if (!s3Inserted) {
-      return res.status(500).json({
-        erro: "Falha ao salvar informações da CNH no MongoDB",
-      });
-    }
+    // if (!s3Inserted) {
+    //   return res.status(500).json({
+    //     erro: "Falha ao salvar informações da CNH no MongoDB",
+    //   });
+    // }
 
-    const cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
-    const cnhFotoPath = aws.Key;
+    // const cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    // const cnhFotoPath = aws.Key;
 
-    await usuario.update({
-      cnhFotoUrl,
-      cnhFotoPath,
-    });
+    // await usuario.update({
+    //   cnhFotoUrl,
+    //   cnhFotoPath,
+    // });
 
     return res.status(200).json({
       mensagem: "Foto da CNH enviada com sucesso",
-      url: cnhFotoUrl,
-      cnhFotoUrl,
-      cnhFotoPath,
+      // url: cnhFotoUrl,
+      // cnhFotoUrl,
+      // cnhFotoPath,
     });
   } catch (error: any) {
     console.error("cadastrarFotoCnhUsuario:", error);
@@ -678,20 +681,20 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
 };
 
 const getFotoByUsuarioId = async (idUsuario: number): Promise<string | null> => {
-  const s3Object = 
-  await findS3ById(idUsuario, "image/jpeg") || 
-  await findS3ById(idUsuario, "image/png") || 
-  await findS3ById(idUsuario, "image/webp");
+  // const s3Object = 
+  // await findS3ById(idUsuario, "image/jpeg") || 
+  // await findS3ById(idUsuario, "image/png") || 
+  // await findS3ById(idUsuario, "image/webp");
 
   let fotoUrl: string | null = "";
   
-  if (s3Object) {
-    fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${s3Object.key}`;
-    } 
-  else {
-    fotoUrl = null
-    }
-  console.log(`getFotoByUsuarioId(${idUsuario}) => ${fotoUrl}`);
+  // if (s3Object) {
+  //   fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${s3Object.key}`;
+  //   } 
+  // else {
+  //   fotoUrl = null
+  //   }
+  // console.log(`getFotoByUsuarioId(${idUsuario}) => ${fotoUrl}`);
   return fotoUrl;
 }
 
@@ -754,15 +757,15 @@ export const deletarFotoUsuario = async (req: Request, res: Response) => {
     if (!idUsuario) {
       return res.status(401).json({ erro: "Usuário não autenticado" });
     }
-    const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
-    if (!s3Object) {
-      return res.status(404).json({ erro: "Foto do usuário não encontrada" });
-    }
-    await deletarArquivoS3(s3Object.key);
-    const result = await deleteS3ById(idUsuario, s3Object.minytype);
-    if (!result) {
-      return res.status(500).json({ erro: "Falha ao deletar informações no MongoDB" });
-    }
+    // const s3Object = await findS3ById(idUsuario, "image/jpeg") || await findS3ById(idUsuario, "image/png") || await findS3ById(idUsuario, "image/webp");
+    // if (!s3Object) {
+    //   return res.status(404).json({ erro: "Foto do usuário não encontrada" });
+    // }
+    // await deletarArquivoS3(s3Object.key);
+    // const result = await deleteS3ById(idUsuario, s3Object.minytype);
+    // if (!result) {
+    //   return res.status(500).json({ erro: "Falha ao deletar informações no MongoDB" });
+    //}
     return res.status(200).json({ mensagem: "Foto do usuário deletada com sucesso" });
   } catch (error: any) {
     console.error("Erro ao deletar foto do usuário:", error);
@@ -771,19 +774,19 @@ export const deletarFotoUsuario = async (req: Request, res: Response) => {
 }
 
 const getFotoCnhByUsuarioId = async (idUsuario: number): Promise<string | null> => {
-  const s3Object =
-    await findS3ById(idUsuario, "CNH-image/jpeg") ||
-    await findS3ById(idUsuario, "CNH-image/png") ||
-    await findS3ById(idUsuario, "CNH-image/webp");
+  // const s3Object =
+  //   await findS3ById(idUsuario, "CNH-image/jpeg") ||
+  //   await findS3ById(idUsuario, "CNH-image/png") ||
+  //   await findS3ById(idUsuario, "CNH-image/webp");
 
   let cnhFotoUrl: string | null = "";
 
-  if (s3Object) {
-      cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${s3Object.key}`;
-  }
-  else{
-    cnhFotoUrl = null;
-  }
+  // if (s3Object) {
+  //     cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${s3Object.key}`;
+  // }
+  // else{
+  //   cnhFotoUrl = null;
+  // }
 
   return cnhFotoUrl;
 }

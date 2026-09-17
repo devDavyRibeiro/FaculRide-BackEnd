@@ -2,35 +2,35 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 
 export async function loadSecrets() {
   try {
-    const secretName = process.env.AWS_SECRET_NAME;
+    // const secretName = process.env.AWS_SECRET_NAME;
 
-    // Ambiente local sem Secrets Manager
-    if (!secretName) {
-      console.log("ℹ️ AWS_SECRET_NAME não definido. Usando variáveis do .env local.");
-      return;
-    }
+    // // Ambiente local sem Secrets Manager
+    // if (!secretName) {
+    //   console.log("ℹ️ AWS_SECRET_NAME não definido. Usando variáveis do .env local.");
+    //   return;
+    // }
 
-    const client = new SecretsManagerClient({
-      region: process.env.AWS_REGION,
-    });
+    // const client = new SecretsManagerClient({
+    //   region: process.env.AWS_REGION,
+    // });
 
-    const command = new GetSecretValueCommand({
-      SecretId: secretName,
-    });
+    // const command = new GetSecretValueCommand({
+    //   SecretId: secretName,
+    // });
 
-    const response = await client.send(command);
+    // const response = await client.send(command);
 
-    if (!response.SecretString) {
-      throw new Error("SecretString vazia");
-    }
+    // if (!response.SecretString) {
+    //   throw new Error("SecretString vazia");
+    // }
 
-    const secrets = JSON.parse(response.SecretString);
+    // const secrets = JSON.parse(response.SecretString);
 
-    Object.entries(secrets).forEach(([key, value]) => {
-      process.env[key] = String(value);
-    });
+    // Object.entries(secrets).forEach(([key, value]) => {
+    //   process.env[key] = String(value);
+    // });
 
-    console.log("✅ Secrets carregados do AWS Secrets Manager");
+    // console.log("✅ Secrets carregados do AWS Secrets Manager");
 
   } catch (error) {
     console.error("❌ Erro ao carregar secrets:", error);
