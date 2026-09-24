@@ -7,6 +7,10 @@ export const swaggerDocument = {
   },
   servers: [
     {
+       url: process.env.BASE_URL || "http://57.156.62.131:3000/api-docs",
+      description: "Servidor API",
+    },
+    {
       url: process.env.BASE_URL || "http://localhost:3000/api",
       description: "Servidor API",
     },
