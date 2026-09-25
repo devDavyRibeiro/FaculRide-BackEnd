@@ -42,6 +42,8 @@
     "tar": "^7.5.13"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@types/aws-sdk": "^0.0.42",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.18",
