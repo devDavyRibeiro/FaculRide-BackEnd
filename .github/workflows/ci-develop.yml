@@ -3,7 +3,7 @@ name: CI - Development
 on:
   push:
     branches:
-      - develop
+      - feature/github-actions-test
 
 permissions:
   contents: write
