@@ -43,7 +43,7 @@ jobs:
           CURRENT_VERSION="${LAST_TAG#v}"
           BASE_VERSION=$(echo $CURRENT_VERSION | cut -d'-' -f1)
 
-          BUMP_TYPE=$(npx conventional-recommended-bump -p angular)
+          BUMP_TYPE=$(npx -p conventional-recommended-bump -p conventional-changelog-angular conventional-recommended-bump -p angular)
 
           NEW_VERSION=$(npx semver -i $BUMP_TYPE "$BASE_VERSION")
 
