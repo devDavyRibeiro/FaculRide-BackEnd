@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '24.14.0'
+          node-version: '22'
           cache: 'npm'
 
       - name: Validar mensagens dos commits
@@ -30,27 +30,21 @@ jobs:
           configFile: ./commitlint.config.js
           failOnWarnings: false
           helpMessage: "Utilize o padrão: tipo(escopo): descrição (ex: feat(ui): novo botão)"
-          continueOnError: true
 
       - name: Instalar Dependências
-        run: npm install --force
-
-      - name: Instalar Semver Global
-        run: npm install -g semver
+        run: npm ci
 
       - name: Calcular nova versão Preview
         id: version
         run: |
           git fetch --tags --force --prune
 
-          
-
           LAST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1 || echo "v0.0.0")
           CURRENT_VERSION="${LAST_TAG#v}"
 
           # Remove sufixos anteriores se existirem para o cálculo da base
           BASE_VERSION=$(echo $CURRENT_VERSION | cut -d'-' -f1)
-          NEW_VERSION=$(semver -i patch "$BASE_VERSION")
+          NEW_VERSION=$(npx semver -i patch "$BASE_VERSION")
 
           # Número do preview
           COUNT=$(git tag --list "v${NEW_VERSION}-preview.*" | wc -l | xargs)
