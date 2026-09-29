@@ -3,7 +3,7 @@ name: CI - Production
 on:
   push:
     branches:
-      - main
+      - feature/github-actions-test
 
 permissions:
   contents: write
@@ -74,6 +74,19 @@ jobs:
             echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
             echo "should_deploy=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Atualizar package.json
+        if: steps.version.outputs.should_deploy == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Atualiza a versão no package.json sem disparar scripts de lifecycle
+          npm version ${{ steps.version.outputs.new_version }} --git-tag-version=false
+
+          git add package.json package-lock.json
+          git commit -m "chore(release): bump version to v${{ steps.version.outputs.new_version }} [skip ci]"
+          git push origin main
 
       - name: Criar Release e Tag (GitHub)
         if: steps.version.outputs.should_deploy == 'true'
