@@ -6,7 +6,6 @@ import {
   buscarUsuarioPorId,
   atualizarUsuario,
   deletarUsuario,
-  atualizarFotoUsuario,
   cadastrarFotoUsuario,
   cadastrarFotoCnhUsuario,
   validarCnhUsuario,
@@ -76,7 +75,7 @@ router.delete("/:id", (req, res) => {
 
 // ROTA PROTEGIDA — atualiza SOMENTE fotoUrl/fotoPath do usuário autenticado (JSON)
 router.patch("/foto", (req, res) => {
-  atualizarFotoUsuario(req, res);
+  cadastrarFotoUsuario(req, res);
 });
 
 // NOVA ROTA PROTEGIDA — upload multipart da foto + atualização automática no usuário
@@ -97,6 +96,6 @@ router.delete("/foto/delete", (req, res) => {
 });
 
 router.put("/foto/update", upload.single("file"), (req, res) => {
-  atualizarFotoUsuario(req, res);
+  cadastrarFotoUsuario(req, res);
 })
 export default router;
