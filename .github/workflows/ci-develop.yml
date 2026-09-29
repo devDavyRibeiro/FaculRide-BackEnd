@@ -43,7 +43,17 @@ jobs:
           CURRENT_VERSION="${LAST_TAG#v}"
           BASE_VERSION=$(echo $CURRENT_VERSION | cut -d'-' -f1)
 
-          BUMP_TYPE=$(npx conventional-recommended-bump@9 -p angular)
+          BUMP_TYPE=$(node -e "
+            const { execSync } = require('child_process');
+            try {
+              const log = execSync('git log $(git tag --list \"v*\" --sort=-v:refname | head -n1)..HEAD --oneline', { encoding: 'utf8' });
+              if (/feat!|fix!|BREAKING CHANGE/i.test(log)) console.log('major');
+              else if (/feat/i.test(log)) console.log('minor');
+              else console.log('patch');
+            } catch {
+              console.log('patch');
+            }
+          ")
 
           NEW_VERSION=$(npx semver -i $BUMP_TYPE "$BASE_VERSION")
 
