@@ -388,7 +388,8 @@ export const atualizarFotoUsuario = async (req: Request, res: Response) => {
 
     
   }catch(error:any){
-
+    console.error("Erro ao atualizar foto do usuário:", error);
+    return res.status(500).json({ erro: error.message || "Erro ao atualizar foto do usuário" });
   }
 };
 
