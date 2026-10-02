@@ -1,3 +1,4 @@
+/*
 import { Request, Router,Response } from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -14,4 +15,4 @@ router.get('/', async (req:Request, res:Response) => {
   res.json({ message: 'Teste de rota funcionando!', response });
 });
 export default router;
-  
+*/
