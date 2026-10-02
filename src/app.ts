@@ -56,11 +56,11 @@ const isAllowedOrigin = (origin?: string | null) => {
     // Backend AWS via IP + porta
     if (origin === "http://50.16.209.47:3000") return true;
 
-    // Backend AWS via DNS amigável
-    if (origin === "http://faculride-api.duckdns.org") return true;
+    // API pública via DNS amigável
+    if (origin === "https://faculride-api.duckdns.org") return true;
 
-    // Frontend AWS via DNS amigável
-    if (origin === "http://faculride-front.duckdns.org") return true;
+    // Frontend público via DNS amigável
+    if (origin === "https://faculride-front.duckdns.org") return true;
 
     // Backend Azure via IP + porta
     if (origin === "http://57.156.62.131:3000") return true;
