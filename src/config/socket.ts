@@ -12,7 +12,7 @@ export const initSocket = (httpServer: HttpServer) => {
     cors: {
       origin: [
         "http://localhost:4200",
-        "https://faculride-front.duckdns.org",
+        "http://faculride-front.duckdns.org",
         "https://faculride.vercel.app",
       ],
       methods: ["GET", "POST"],
