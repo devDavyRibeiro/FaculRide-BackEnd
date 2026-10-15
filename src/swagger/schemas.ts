@@ -7,6 +7,10 @@ export const swaggerDocument = {
   },
   servers: [
     {
+      url: process.env.BASE_URL || "https://faculride-api.duckdns.org/api",
+      description: "Servidor API",
+    },
+    {
       url: process.env.BASE_URL || "http://localhost:3000/api",
       description: "Servidor API",
     },
