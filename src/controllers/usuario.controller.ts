@@ -226,6 +226,10 @@ export const loginUsuario = async (req: Request, res: Response) => {
         fotoUrl: usuario.getDataValue("fotoUrl") || null,
         cnhFotoUrl: usuario.getDataValue("cnhFotoUrl") || null,
         veiculo: veiculo ? veiculo.toJSON() : null,
+        // fotoUrl: fotoUrlMongoS3 || usuario.getDataValue("fotoUrl") || null,
+        // fotoPath: usuario.getDataValue("fotoPath") ?? null,
+        // cnhFotoUrl: cnhFotoUrlMongoS3 || usuario.getDataValue("cnhFotoUrl") || null,
+        // cnhFotoPath: usuario.getDataValue("cnhFotoPath") ?? null,
       },
     });
   } catch (error: any) {

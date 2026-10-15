@@ -1,23 +1,25 @@
-# Use a versão LTS (Long Term Support) para maior estabilidade
-FROM node:20-alpine AS build
+FROM node:22-alpine AS builder
 
-# Define o diretório de trabalho
 WORKDIR /app
 
-# Copia apenas arquivos de dependências primeiro (aproveita o cache do Docker)
 COPY package*.json ./
 
-# Instala dependências (incluindo as de desenvolvimento para o build)
-RUN npm install
+RUN npm ci
 
-# Copia o restante dos arquivos
 COPY . .
 
-# Executa o build do TypeScript/Angular
 RUN npm run build
 
-# Porta da aplicação
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY --from=builder /app/dist ./dist
+
 EXPOSE 3000
 
-# Comando para iniciar
-CMD [ "npm", "run", "start" ]
+CMD ["node", "dist/server.js"]
