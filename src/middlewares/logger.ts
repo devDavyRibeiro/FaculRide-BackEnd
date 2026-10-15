@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { sendLog } from '../utils/cloudwatch';
+import { sendLog } from '../utils/azureMonitor';
 
 export async function logger(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();
