@@ -377,9 +377,10 @@ describe("3. Upload de documentação e mídia", () => {
       expect(res.status).toBe(200);
     });
 
-    // Borda: o cartão diz "até 5MB", mas um arquivo de EXATAMENTE 5MB é rejeitado
-    // (o multer/busboy considera o limite atingido ao chegar em 5*1024*1024 bytes). Baixa gravidade.
-    bug("aceita arquivo de exatamente 5MB", async () => {
+    // Borda: o cartão diz "até 5MB". Num multer mais antigo (2.0.2) um arquivo de EXATAMENTE
+    // 5MB era rejeitado por um off-by-one no limite; a partir do multer 2.4.0 isso foi corrigido
+    // upstream, então deixou de ser um bug neste projeto (confirmado após atualizar a lockfile).
+    it("aceita arquivo de exatamente 5MB", async () => {
       usuarioComo("passageiro");
       const res = await request(app)
         .post("/api/usuario/foto/upload")
