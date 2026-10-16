@@ -11,7 +11,7 @@ import { VeiculoModel } from "../models/veiculo.model";
 import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
-import { uploadFileToAzure } from "../services/blobStorageService";
+//import { uploadFileToAzure } from "../services/blobStorageService";
 import { enviarEmailCnhValidada } from "../utils/lambdaEmail";
 
 // Validação de senha forte
@@ -351,17 +351,17 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
     }
 
     // Upload direto para o Azure Blob Storage
-    const fotoUrl = await uploadFileToAzure(file.buffer, file.originalname, file.mimetype);
+    //const fotoUrl = await uploadFileToAzure(file.buffer, file.originalname, file.mimetype);
 
     const usuario = await UsuarioModel.findByPk(idUsuario);
     if (usuario) {
-      await usuario.update({ fotoUrl });
+      //await usuario.update({ fotoUrl });
     }
 
     return res.status(200).json({
       mensagem: "Foto enviada e atualizada com sucesso no Azure",
-      url: fotoUrl,
-      fotoUrl,
+      //url: fotoUrl,
+      //fotoUrl,
     });
   } catch (error: any) {
     console.error("cadastrarFotoUsuario:", error);
@@ -410,14 +410,14 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
     }
 
     // Upload direto para o Azure Blob Storage
-    const cnhFotoUrl = await uploadFileToAzure(file.buffer, file.originalname, file.mimetype);
+    //const cnhFotoUrl = await uploadFileToAzure(file.buffer, file.originalname, file.mimetype);
 
-    await usuario.update({ cnhFotoUrl });
+    //await usuario.update({ cnhFotoUrl });
 
     return res.status(200).json({
       mensagem: "Foto da CNH enviada com sucesso para o Azure",
-      url: cnhFotoUrl,
-      cnhFotoUrl,
+      // url: cnhFotoUrl,
+      // cnhFotoUrl,
     });
   } catch (error: any) {
     console.error("cadastrarFotoCnhUsuario:", error);
