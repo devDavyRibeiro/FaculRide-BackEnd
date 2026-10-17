@@ -1,6 +1,6 @@
 {
   "development": {
-    "url": "postgresql://postgres:1234@localhost:5432/faculride",
+    "url": "postgresql://postgres:1234@localhost:5432/postgres",
     "dialect": "postgres"
   },
   "test": {

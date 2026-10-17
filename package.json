@@ -6,7 +6,9 @@
     "dev": "ts-node-dev --respawn --transpile-only ./src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "migrate": "npx sequelize-cli db:migrate"
+    "migrate": "sequelize-cli db:migrate",
+    "undo-migrate-all": "sequelize-cli db:migrate:undo:all",
+    "test": "jest"
   },
   "keywords": [],
   "author": "FaculRide",
@@ -42,10 +44,13 @@
     "tar": "^7.5.13"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@types/aws-sdk": "^0.0.42",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mercadopago": "^1.5.11",
     "@types/multer": "^2.0.0",
@@ -54,10 +59,21 @@
     "@types/pg": "^8.15.2",
     "@types/sequelize": "^4.28.20",
     "@types/socket.io": "^3.0.1",
+    "@types/supertest": "^7.2.1",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "dotenv-cli": "^11.0.0",
-    "sequelize-cli": "^6.6.3",
+<<<<<<< HEAD
+    "jest": "^30.5.2",
+    "sequelize-cli": "^6.6.5",
+    "ts-jest": "^29.4.14",
+     "supertest": "^7.3.0",
+=======
+    "jest": "^29.7.0",
+    "sequelize-cli": "^6.6.5",
+    "supertest": "^7.3.0",
+    "ts-jest": "^29.4.13",
+>>>>>>> 2bf3f813a4cd0d776801b5c7be4c3222c8cc71cb
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"

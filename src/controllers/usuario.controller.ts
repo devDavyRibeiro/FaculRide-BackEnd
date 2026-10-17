@@ -11,7 +11,7 @@ import { VeiculoModel } from "../models/veiculo.model";
 import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
-//import { uploadFileToAzure } from "../services/blobStorageService";
+import { uploadFileToAzure } from "../services/blobStorageService";
 import { enviarEmailCnhValidada } from "../utils/lambdaEmail";
 
 // Validação de senha forte
@@ -350,18 +350,33 @@ export const cadastrarFotoUsuario = async (req: Request, res: Response) => {
       });
     }
 
-    // Upload direto para o Azure Blob Storage
-    //const fotoUrl = await uploadFileToAzure(file.buffer, file.originalname, file.mimetype);
+    const aws = await uploadArquivoS3(req.file!);
+    if (!aws) {
+      return res.status(500).json({ erro: "Falha ao enviar arquivo para AWS S3" });
+    }
+
+    const s3Inserted = await insertS3(idUsuario, aws.Key!, file.mimetype);
+    console.log("Informações da foto inseridas no MongoDB:", s3Inserted);
+    if (!s3Inserted) {
+      return res.status(500).json({ erro: "Falha ao salvar informações no MongoDB" });
+    }
+
+    const fotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    const fotoPath = aws.Key;
 
     const usuario = await UsuarioModel.findByPk(idUsuario);
     if (usuario) {
-      //await usuario.update({ fotoUrl });
+      await usuario.update({
+        fotoUrl,
+        fotoPath,
+      });
     }
 
     return res.status(200).json({
-      mensagem: "Foto enviada e atualizada com sucesso no Azure",
-      //url: fotoUrl,
-      //fotoUrl,
+      mensagem: "Foto enviada e usuário atualizado com sucesso",
+      url: fotoUrl,
+      fotoUrl,
+      fotoPath,
     });
   } catch (error: any) {
     console.error("cadastrarFotoUsuario:", error);
@@ -409,15 +424,39 @@ export const cadastrarFotoCnhUsuario = async (req: Request, res: Response) => {
       });
     }
 
-    // Upload direto para o Azure Blob Storage
-    //const cnhFotoUrl = await uploadFileToAzure(file.buffer, file.originalname, file.mimetype);
+    const aws = await uploadArquivoS3(req.file!);
 
-    //await usuario.update({ cnhFotoUrl });
+    if (!aws) {
+      return res.status(500).json({
+        erro: "Falha ao enviar arquivo para AWS S3",
+      });
+    }
+
+    const s3Inserted = await insertS3(
+      idUsuario,
+      aws.Key!,
+      `CNH-${file.mimetype}`
+    );
+
+    if (!s3Inserted) {
+      return res.status(500).json({
+        erro: "Falha ao salvar informações da CNH no MongoDB",
+      });
+    }
+
+    const cnhFotoUrl = `https://faculride01.s3.us-east-1.amazonaws.com/${aws.Key}`;
+    const cnhFotoPath = aws.Key;
+
+    await usuario.update({
+      cnhFotoUrl,
+      cnhFotoPath,
+    });
 
     return res.status(200).json({
-      mensagem: "Foto da CNH enviada com sucesso para o Azure",
-      // url: cnhFotoUrl,
-      // cnhFotoUrl,
+      mensagem: "Foto da CNH enviada com sucesso",
+      url: cnhFotoUrl,
+      cnhFotoUrl,
+      cnhFotoPath,
     });
   } catch (error: any) {
     console.error("cadastrarFotoCnhUsuario:", error);
