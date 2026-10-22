@@ -26,11 +26,12 @@ jobs:
 
       - name: Validar mensagens dos commits
         uses: wagoid/commitlint-github-action@v5
+        continue-on-error: true  # <--- Corrigido para o padrão do GitHub Actions (com hífens) teste 3
         with:
           configFile: ./commitlint.config.js
           failOnWarnings: false
           helpMessage: "Utilize o padrão: tipo(escopo): descrição (ex: feat(ui): novo botão)"
-        continue-on-error: true  # <--- Corrigido para o padrão do GitHub Actions (com hífens) teste 2 
+        
 
       - name: Instalar Dependências
         run: npm ci
