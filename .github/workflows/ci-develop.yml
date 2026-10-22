@@ -30,7 +30,7 @@ jobs:
           configFile: ./commitlint.config.js
           failOnWarnings: false
           helpMessage: "Utilize o padrão: tipo(escopo): descrição (ex: feat(ui): novo botão)"
-        continue-on-error: true  # <--- Corrigido para o padrão do GitHub Actions (com hífens)
+        continue-on-error: true  # <--- Corrigido para o padrão do GitHub Actions (com hífens) teste 2 
 
       - name: Instalar Dependências
         run: npm ci
