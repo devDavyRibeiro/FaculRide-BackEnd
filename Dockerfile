@@ -6,7 +6,7 @@ COPY package*.json ./
 
 RUN npm ci
 
-COPY . .
+COPY dist ./dist
 
 RUN npm run build
 
