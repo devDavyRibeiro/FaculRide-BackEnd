@@ -174,9 +174,36 @@ export const listarMinhasConversas = async (req: Request, res: Response) => {
 };
 
 // ================= LISTAR MENSAGENS =================
-export const listarMensagens = async (req: Request, res: Response) => {
+export const listarMensagens = async (
+  req: Request,
+  res: Response
+) => {
   try {
+    const user = (req as any).user;
+    const idUsuario = Number(user?.id ?? user?.idUsuario);
     const idConversa = Number(req.params.idConversa);
+
+    if (!idUsuario || !idConversa) {
+      return res.status(400).json({
+        erro: "Dados inválidos"
+      });
+    }
+
+    const conversa = await ConversaCaronaModel.findByPk(
+      idConversa
+    );
+
+    if (!conversa) {
+      return res.status(404).json({
+        erro: "Conversa não encontrada"
+      });
+    }
+
+    if (!usuarioParticipaDaConversa(conversa, idUsuario)) {
+      return res.status(403).json({
+        erro: "Você não tem acesso a esta conversa"
+      });
+    }
 
     const mensagens = await MensagemConversaModel.findAll({
       where: { idConversa },
@@ -184,15 +211,17 @@ export const listarMensagens = async (req: Request, res: Response) => {
         {
           model: UsuarioModel,
           as: "remetente",
-          attributes: { exclude: ["senha"] },
-        },
+          attributes: { exclude: ["senha"] }
+        }
       ],
-      order: [["createdAt", "ASC"]],
+      order: [["createdAt", "ASC"]]
     });
 
     return res.json(mensagens);
   } catch (error: any) {
-    return res.status(500).json({ erro: error.message });
+    return res.status(500).json({
+      erro: error.message
+    });
   }
 };
 
@@ -224,6 +253,12 @@ export const enviarMensagem = async (req: Request, res: Response) => {
 
     if (!conversa) {
       return res.status(404).json({ erro: "Conversa não encontrada" });
+    }
+
+    if (!usuarioParticipaDaConversa(conversa, idRemetente)) {
+      return res.status(403).json({
+        erro: "Você não tem permissão para enviar mensagens nesta conversa",
+      });
     }
 
     if ((conversa as any).viagem?.cancelada) {
@@ -297,6 +332,12 @@ export const aceitarCarona = async (req: Request, res: Response) => {
 
     if (!conversa) {
       return res.status(404).json({ erro: "Conversa não encontrada" });
+    }
+
+    if (!usuarioParticipaDaConversa(conversa, idUsuario)) {
+      return res.status(403).json({
+        erro: "Você não tem permissão para alterar esta conversa",
+      });
     }
 
     const conversaJson = conversa.toJSON() as any;
@@ -450,11 +491,18 @@ export const aceitarCarona = async (req: Request, res: Response) => {
 export const recusarCarona = async (req: Request, res: Response) => {
   try {
     const idConversa = Number(req.params.idConversa);
-
+    const user = (req as any).user;
+    const idUsuario = Number(user?.id ?? user?.idUsuario);
     const conversa = await ConversaCaronaModel.findByPk(idConversa);
 
     if (!conversa) {
       return res.status(404).json({ erro: "Conversa não encontrada" });
+    }
+
+    if (!usuarioParticipaDaConversa(conversa, idUsuario)) {
+      return res.status(403).json({
+        erro: "Você não tem permissão para alterar esta conversa",
+      });
     }
 
     const conversaJson = conversa.toJSON() as any;
@@ -485,4 +533,22 @@ export const recusarCarona = async (req: Request, res: Response) => {
   } catch (error: any) {
     return res.status(500).json({ erro: error.message });
   }
+};
+
+const usuarioParticipaDaConversa = (
+  conversa: ConversaCaronaModel,
+  idUsuario: number
+): boolean => {
+  const idMotorista = Number(
+    conversa.getDataValue("idMotorista")
+  );
+
+  const idPassageiro = Number(
+    conversa.getDataValue("idPassageiro")
+  );
+
+  return (
+    idUsuario === idMotorista ||
+    idUsuario === idPassageiro
+  );
 };
