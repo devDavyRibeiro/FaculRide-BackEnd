@@ -1,17 +1,14 @@
-import { Request, Router,Response } from "express";
-import jwt from "jsonwebtoken";
+import { Request, Router, Response } from "express";
 import dotenv from "dotenv";
-import { UsuarioModel } from "../models/usuario.model";
-import { getArquivoS3byID } from "../utils/s3Client";
-
+// Importação do S3 removida temporariamente para corrigir o build
 
 dotenv.config();
 
 const router = Router();
 
-router.get('/', async (req:Request, res:Response) => {
-  const response = await getArquivoS3byID('487a96b01acae527c51aaa9f1112c9f1');
-  res.json({ message: 'Teste de rota funcionando!', response });
+router.get('/', async (req: Request, res: Response) => {
+  // Chamada ao S3 removida; mantemos apenas a resposta de sucesso
+  res.json({ message: 'Teste de rota funcionando!' });
 });
+
 export default router;
-  

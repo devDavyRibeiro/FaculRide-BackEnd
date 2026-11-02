@@ -12,7 +12,7 @@ import { LogAcessoModel } from "../models/logAcesso.model";
 import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { uploadFileToAzure } from "../services/blobStorageService";
-import { enviarEmailCnhValidada } from "../utils/lambdaEmail";
+import { enviarEmailCnhValidada } from "../utils/AzureEmail";
 
 // Validação de senha forte
 function validarSenha(senha: string) {

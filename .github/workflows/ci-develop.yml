@@ -26,11 +26,12 @@ jobs:
 
       - name: Validar mensagens dos commits
         uses: wagoid/commitlint-github-action@v5
+        continue-on-error: true  # <--- Corrigido para o padrão do GitHub Actions (com hífens) teste 3
         with:
           configFile: ./commitlint.config.js
           failOnWarnings: false
           helpMessage: "Utilize o padrão: tipo(escopo): descrição (ex: feat(ui): novo botão)"
-          continueOnError: true
+        
 
       - name: Instalar Dependências
         run: npm ci
@@ -91,3 +92,22 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:development-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Deploy Develop na VM do Azure
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:development-latest
+
+            docker stop faculride-back || true
+            docker rm faculride-back || true
+
+            docker run -d \
+              --name faculride-back \
+              --restart unless-stopped \
+              --env-file /home/adminfaculride/FaculRide-BackEnd/.env \
+              -p 3000:3000 \
+              ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:development-latest
