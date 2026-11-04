@@ -87,7 +87,6 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
   const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
   usuario.senha = senhaCriptografada;
 
-  console.log("Criptografando senha: ", usuario.senha);
 
   const transaction = await sequelize.transaction();
 

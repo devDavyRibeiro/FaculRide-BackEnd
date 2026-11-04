@@ -64,10 +64,14 @@ export const create = async (dados: IAvaliacao): Promise<IAvaliacao> => {
 };
 export const mediaUser = async (id: number): Promise<{ media:number }> => {
   const avaliacao = await AvaliacaoModel.findAll({
-    attributes: [[sequelize.fn("AVG", sequelize.col("Estrelas")), "media"]],
+    attributes: [[sequelize.fn("AVG", sequelize.col("Estrelas")), "media"],[sequelize.fn("COUNT", sequelize.col("ID_Avaliacao")), "qtd"]],
     where:{ID_Avaliado: id}
   })
-  const media = parseFloat((avaliacao[0].get("media") as string) || "0");
+
+  if(avaliacao[0].get("qtd") as number === 0){
+    return { media: 5 };
+  }
+  const media = parseFloat((avaliacao[0].get("media") as string));
   return { media };
 }
 // Atualizar avaliação
