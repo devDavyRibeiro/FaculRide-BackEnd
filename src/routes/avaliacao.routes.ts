@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { AuthorizeMiddleware } from "../middlewares/authorize.middleware";
-import { listAll, create, update, remove, mediaUser } from "../controllers/avaliacao.controller";
+import { listAll, create, update, remove, mediaUser, hasAvaliacao } from "../controllers/avaliacao.controller";
 import { IAvaliacao } from "../interfaces/Iavaliacao";
 import { Iusuario } from "../interfaces/Iusuario";
 
@@ -28,6 +28,16 @@ router.get("/media/:id", async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ erro: error.message || "Erro ao buscar avaliações" });
   }
 });
+
+router.get("/hasAvaliacao/:idViagem", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const idViagem = Number(req.params.idViagem);
+    const response: boolean = await hasAvaliacao(idViagem);
+    res.status(200).json({ hasAvaliacao: response });
+  } catch (error: any) {
+    res.status(500).json({ erro: error.message || "Erro ao verificar avaliação" });
+  }
+})
 
 // POST /api/avaliacao
 router.post("/", async (req: Request, res: Response): Promise<void> => {

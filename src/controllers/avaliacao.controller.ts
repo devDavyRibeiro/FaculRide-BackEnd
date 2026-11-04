@@ -105,3 +105,10 @@ export const remove = async (id: number): Promise<boolean> => {
   await avaliacao.destroy();
   return true;
 };
+
+export const hasAvaliacao = async (idViagem: number): Promise<boolean> => {
+  const count = await AvaliacaoModel.count({
+    where: { ID_Viagem: idViagem },
+  });
+  return count > 0;
+}
