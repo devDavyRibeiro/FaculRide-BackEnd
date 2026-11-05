@@ -20,7 +20,6 @@ import viagemRoutes from "./routes/viagem.routes";
 import logAcessoRoutes from "./routes/logAcesso.routes";
 import publicRoutes from "./routes/public.routes";
 import notificationRoutes from "./routes/notification.routes";
-import teste from "./routes/teste.routes";
 import pagamentoRoutes from "./routes/pagamento.routes";
 import conversaRoutes from "./routes/conversa.routes";
 
@@ -116,7 +115,6 @@ app.use("/api", pagamentoRoutes);
 
 // Rotas de notificações (JWT é aplicado dentro do router)
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/teste", teste);
 
 /** --------- Servidor HTTP + Socket.IO --------- */
 const PORT = process.env.PORT || 3000;

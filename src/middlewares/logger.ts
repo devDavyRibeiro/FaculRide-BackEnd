@@ -7,7 +7,7 @@ export async function logger(req: Request, res: Response, next: NextFunction) {
   res.on('finish', async () => {
     const tempo = Date.now() - start;
 
-    console.log("LOG DISPARADO");
+    //console.log("LOG DISPARADO");
 
     await sendLog({
       tipo: 'REQUEST',

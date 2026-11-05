@@ -27,7 +27,8 @@ export async function sendLog(message: any) {
   };
 
   try {
-    await cloudwatch.putLogEvents(params).promise();
+    //console.log("LOG: ", message);
+    //await cloudwatch.putLogEvents(params).promise();
   } catch (error) {
     console.error('Erro ao enviar log:', error);
   }

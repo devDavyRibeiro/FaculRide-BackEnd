@@ -29,16 +29,6 @@ router.get("/media/:id", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-router.get("/hasAvaliacao/:idViagem", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const idViagem = Number(req.params.idViagem);
-    const response: boolean = await hasAvaliacao(idViagem);
-    res.status(200).json({ hasAvaliacao: response });
-  } catch (error: any) {
-    res.status(500).json({ erro: error.message || "Erro ao verificar avaliação" });
-  }
-})
-
 // POST /api/avaliacao
 router.post("/", async (req: Request, res: Response): Promise<void> => {
   try {
