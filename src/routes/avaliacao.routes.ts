@@ -1,6 +1,8 @@
 import express, { Request, Response } from "express";
 import { AuthorizeMiddleware } from "../middlewares/authorize.middleware";
-import { listAll, create, update, remove } from "../controllers/avaliacao.controller";
+import { listAll, create, update, remove, mediaUser } from "../controllers/avaliacao.controller";
+import { IAvaliacao } from "../interfaces/Iavaliacao";
+import { Iusuario } from "../interfaces/Iusuario";
 
 const router = express.Router();
 
@@ -12,6 +14,16 @@ router.get("/", async (_req: Request, res: Response): Promise<void> => {
   try {
     const avaliacoes = await listAll();
     res.status(200).json(avaliacoes);
+  } catch (error: any) {
+    res.status(500).json({ erro: error.message || "Erro ao buscar avaliações" });
+  }
+});
+
+router.get("/media/:id", async (req: Request, res: Response): Promise<void> => {
+  try{
+    const id = Number(req.params.id);
+    const avaliacao = await mediaUser(id);
+    res.status(200).json(avaliacao);
   } catch (error: any) {
     res.status(500).json({ erro: error.message || "Erro ao buscar avaliações" });
   }

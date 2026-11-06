@@ -1,6 +1,7 @@
 import { AvaliacaoModel } from "../models/avaliacao.model";
 import { IAvaliacao } from "../interfaces/Iavaliacao";
 import { notifyUser } from "../utils/notifyUser";
+import sequelize from "../config/database";
 
 // Listar todas as avaliações
 export const listAll = async (): Promise<IAvaliacao[]> => {
@@ -61,7 +62,14 @@ export const create = async (dados: IAvaliacao): Promise<IAvaliacao> => {
 
   return nova;
 };
-
+export const mediaUser = async (id: number): Promise<{ media:number }> => {
+  const avaliacao = await AvaliacaoModel.findAll({
+    attributes: [[sequelize.fn("AVG", sequelize.col("Estrelas")), "media"]],
+    where:{ID_Avaliado: id}
+  })
+  const media = parseFloat((avaliacao[0].get("media") as string) || "0");
+  return { media };
+}
 // Atualizar avaliação
 export const update = async (
   id: number,
