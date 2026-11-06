@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import {
   cadastrarUsuario,
   filtrarUsuarios,
@@ -22,6 +22,31 @@ const upload = multer({
 });
 
 const router = express.Router();
+
+const autorizarProprioUsuario = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const usuarioAutenticado = (req as any).user;
+  const idAutenticado = Number(usuarioAutenticado?.id ?? usuarioAutenticado?.idUsuario);
+  const idSolicitado = Number(req.params.id);
+
+  if (
+    !Number.isSafeInteger(idAutenticado) ||
+    idAutenticado < 1 ||
+    !Number.isSafeInteger(idSolicitado) ||
+    idSolicitado < 1 ||
+    idAutenticado !== idSolicitado
+  ) {
+    res.status(403).json({
+      erro: "Você só pode alterar ou excluir seus próprios dados.",
+    });
+    return;
+  }
+
+  next();
+};
 
 // ROTAS PÚBLICAS — Cadastro e Login
 router.post("/", async (req, res) => {
@@ -64,12 +89,12 @@ router.put("/alterar-senha", (req, res) => {
 });
 
 // PUT Atualizar dados do usuário
-router.put("/:id", (req, res) => {
+router.put("/:id", autorizarProprioUsuario, (req, res) => {
   atualizarUsuario(req, res);
 });
 
 // DELETE usuário
-router.delete("/:id", (req, res) => {
+router.delete("/:id", autorizarProprioUsuario, (req, res) => {
   deletarUsuario(req, res);
 });
 
