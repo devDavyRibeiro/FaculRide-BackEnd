@@ -2,6 +2,13 @@ import { Request, Response } from "express";
 import { VeiculoModel } from "../models/veiculo.model";
 import { IVeiculo } from "../interfaces/Iveiculo";
 
+const getUsuarioId = (req: Request): number | null => {
+  const usuario = (req as any).user;
+  const idUsuario = Number(usuario?.idUsuario ?? usuario?.id);
+
+  return Number.isInteger(idUsuario) && idUsuario > 0 ? idUsuario : null;
+};
+
 // Listar todos os veículos
 export const listarTodos = async (req: Request, res: Response) => {
   try {
@@ -56,20 +63,30 @@ export const criarVeiculo = async (req: Request, res: Response) => {
 export const atualizarVeiculo = async (req: Request, res: Response) => {
   const { id } = req.params;
   const dados = req.body as IVeiculo;
+  const idUsuario = getUsuarioId(req);
+
+  if (idUsuario === null) {
+    return res.status(401).json({ erro: "Usuário não autenticado." });
+  }
 
   try {
-    const veiculo = await VeiculoModel.findByPk(Number(id));
+    const veiculo = await VeiculoModel.findOne({
+      where: { ID_veiculo: Number(id), idUsuario }
+    });
 
     if (!veiculo) {
       return res.status(404).json({ erro: "Veículo não encontrado com este ID" });
+    }
+
+    if (dados.idUsuario !== undefined && Number(dados.idUsuario) !== idUsuario) {
+      return res.status(403).json({ erro: "Não é permitido transferir o veículo para outro usuário." });
     }
 
     await veiculo.update({
       Placa_veiculo: dados.Placa_veiculo,
       Cor: dados.Cor,
       Modelo: dados.Modelo,
-      Ano: dados.Ano ? Number(dados.Ano) : null,
-      idUsuario: dados.idUsuario
+      Ano: dados.Ano ? Number(dados.Ano) : null
     });
 
     return res.status(200).json({ mensagem: "Veículo atualizado com sucesso", veiculo });
@@ -81,9 +98,16 @@ export const atualizarVeiculo = async (req: Request, res: Response) => {
 // Deletar veículo
 export const deletarVeiculo = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const idUsuario = getUsuarioId(req);
+
+  if (idUsuario === null) {
+    return res.status(401).json({ erro: "Usuário não autenticado." });
+  }
 
   try {
-    const veiculo = await VeiculoModel.findByPk(Number(id));
+    const veiculo = await VeiculoModel.findOne({
+      where: { ID_veiculo: Number(id), idUsuario }
+    });
 
     if (!veiculo) {
       return res.status(404).json({ erro: "Veículo não encontrado para este ID" });
