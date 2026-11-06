@@ -137,16 +137,25 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
 };
 
 // Filtrar usuários
-export const filtrarUsuarios = async (filtros: IusuarioFiltros): Promise<Iusuario[]> => {
+export const filtrarUsuarios = async (
+  filtros: IusuarioFiltros
+): Promise<Pick<Iusuario, "idUsuario" | "nome" | "fatec" | "tipoUsuario" | "fotoUrl">[]> => {
   const usuarios = await UsuarioModel.findAll({
     where: {
       ...(filtros.nome && { nome: filtros.nome }),
       ...(filtros.email && { email: filtros.email }),
       ...(filtros.tipoUsuario && { tipoUsuario: filtros.tipoUsuario }),
     },
+    attributes: ["idUsuario", "nome", "fatec", "tipoUsuario", "fotoUrl"],
   });
 
-  return usuarios;
+  return usuarios.map((usuario) => ({
+    idUsuario: usuario.idUsuario,
+    nome: usuario.nome,
+    fatec: usuario.fatec,
+    tipoUsuario: usuario.tipoUsuario,
+    fotoUrl: usuario.fotoUrl,
+  }));
 };
 
 // Login de usuário com Log de Acesso
@@ -238,21 +247,44 @@ export const loginUsuario = async (req: Request, res: Response) => {
 // Buscar usuário por ID
 export const buscarUsuarioPorId = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
+  const userCtx = (req as any).user;
+  const idUsuarioAutenticado = Number(userCtx?.id ?? userCtx?.idUsuario);
+  const proprioPerfil = Number.isInteger(id) && idUsuarioAutenticado === id;
 
   try {
-    const usuario = await UsuarioModel.findByPk(id);
-    console.log("Usuário encontrado:", usuario);
+    const usuario = await UsuarioModel.findByPk(id, {
+      attributes: proprioPerfil
+        ? [
+            "idUsuario", "nome", "cpf", "email", "telefone", "cep", "endereco",
+            "numero", "cidade", "estado", "fatec", "ra", "genero",
+            "dataNascimento", "tipoUsuario", "cnh", "fotoUrl", "cnhFotoUrl",
+          ]
+        : ["idUsuario", "nome", "fatec", "tipoUsuario", "fotoUrl"],
+    });
     if (!usuario) {
       return res.status(404).json({ erro: "Usuário não encontrado" });
     }
 
     const veiculo = await VeiculoModel.findOne({
       where: { idUsuario: id },
+      ...(proprioPerfil ? {} : { attributes: ["Modelo", "Cor", "Ano"] }),
     });
 
-    return res.status(200).json({
+    const perfil = {
       id: usuario.dataValues.idUsuario,
       nome: usuario.dataValues.nome,
+      fatec: usuario.dataValues.fatec,
+      tipoUsuario: usuario.dataValues.tipoUsuario,
+      fotoUrl: usuario.dataValues.fotoUrl || null,
+      veiculo: veiculo ? veiculo.toJSON() : null,
+    };
+
+    if (!proprioPerfil) {
+      return res.status(200).json(perfil);
+    }
+
+    return res.status(200).json({
+      ...perfil,
       cpf: usuario.dataValues.cpf,
       email: usuario.dataValues.email,
       telefone: usuario.dataValues.telefone,
@@ -261,15 +293,11 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
       numero: usuario.dataValues.numero,
       cidade: usuario.dataValues.cidade,
       estado: usuario.dataValues.estado,
-      fatec: usuario.dataValues.fatec,
       ra: usuario.dataValues.ra,
       genero: usuario.dataValues.genero,
       dataNascimento: usuario.dataValues.dataNascimento,
-      tipoUsuario: usuario.dataValues.tipoUsuario,
       cnh: usuario.dataValues.cnh ?? null,
-      fotoUrl: usuario.dataValues.fotoUrl || null,
       cnhFotoUrl: usuario.dataValues.cnhFotoUrl || null,
-      veiculo: veiculo ? veiculo.toJSON() : null,
     });
   } catch (error: any) {
     return res.status(500).json({
