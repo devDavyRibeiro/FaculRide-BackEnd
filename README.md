@@ -270,6 +270,10 @@ GET /api/usuario/:id
   → Retorna URL pública
 ```
 
+As rotas `GET /api/usuario` e `GET /api/usuario/:id` não retornam credenciais,
+documentos, contatos ou endereços de terceiros. A busca por ID retorna esses
+dados privados somente quando o ID solicitado pertence ao usuário autenticado.
+
 ---
 
 ### 📊 Amazon CloudWatch
