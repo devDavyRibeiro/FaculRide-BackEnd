@@ -31,7 +31,7 @@ GET http://localhost:3000/api/usuario/1
 Authorization: Bearer {{token}}
 
 ### CADASTRAR USUÁRIO (Rota pública)
-POST http://localhost:3000/api/auth
+POST http://localhost:3000/api/usuario/
 Content-Type: application/json
 
 {
@@ -39,14 +39,14 @@ Content-Type: application/json
   "email": "davy@gmail.com",
   "senha": "Abc123!",
   "telefone": "15991697891",
-  "cpf": "40560741863",
+  "cpf": "40560731863",
   "cep": "18111461",
   "endereco": "Avenida Philomena Lopes Vasques",
   "numero": "314",
   "cidade": "Votorantim",
   "estado": "SP",
   "fatec": "Fatec Votorantim",
-  "ra": "3011392413011",
+  "ra": "3011392413012",
   "genero": true,
   "dataNascimento": "1991-12-23",
   "tipoUsuario": "motorista",
