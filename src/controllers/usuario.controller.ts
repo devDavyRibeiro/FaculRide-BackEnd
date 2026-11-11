@@ -240,7 +240,6 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
 
   try {
     const usuario = await UsuarioModel.findByPk(id);
-    console.log("Usuário encontrado:", usuario);
     if (!usuario) {
       return res.status(404).json({ erro: "Usuário não encontrado" });
     }

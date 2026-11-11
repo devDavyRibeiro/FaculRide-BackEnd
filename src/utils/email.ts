@@ -19,8 +19,8 @@ export const smtp = nodemailer.createTransport({
   connectionTimeout: 30000,
   greetingTimeout: 20000,
   socketTimeout: 30000,
-  logger: true,
-  debug: true,
+  logger: false,
+  debug: false,
   tls: {
     minVersion: 'TLSv1.2',
     // Em caso de proxy/mitm, pode testar com:
