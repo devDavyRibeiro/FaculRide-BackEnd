@@ -117,7 +117,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:production-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/faculride-back:production-${{ steps.version.outputs.new_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
