@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { enviarEmailBoasVindas } from "../utils/email";
+import { enviarEmailBoasVindas, enviarEmailRecuperacaoSenha } from "../utils/email";
 dotenv.config();
 
 import sequelize from "../config/database";
@@ -531,5 +531,36 @@ export const deletarFotoUsuario = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Erro ao deletar foto do usuário:", error);
     return res.status(500).json({ erro: error.message || "Erro ao deletar foto" });
+  }
+};
+
+export const esqueciSenhaUsuario = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    const usuario = await UsuarioModel.findOne({ where: { email } });
+
+    if (!usuario) {
+      res.status(404).json({ erro: "Email não encontrado" });
+      return;
+    }
+
+      const token = jwt.sign(
+      {
+        id: usuario.idUsuario,
+        nome: usuario.nome,
+        tipoUsuario: usuario.tipoUsuario,
+      },
+      process.env.JWT_SECRET || "secretoo123",
+      { expiresIn: "1d" }
+    );
+    await enviarEmailRecuperacaoSenha(usuario.email,token);
+
+    res.status(204).end();
+    return;
+  } catch (error: any) {
+    console.error("Erro ao enviar e-mail de recuperação de senha:", error);
+    res.status(500).json({ erro: error.message || "Erro ao enviar e-mail de recuperação de senha" });
+    return
   }
 };
