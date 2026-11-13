@@ -552,7 +552,7 @@ export const esqueciSenhaUsuario = async (req: Request, res: Response) => {
         tipoUsuario: usuario.tipoUsuario,
       },
       process.env.JWT_SECRET || "secretoo123",
-      { expiresIn: "1d" }
+      { expiresIn: "30min" }
     );
     await enviarEmailRecuperacaoSenha(usuario.email,token);
 
