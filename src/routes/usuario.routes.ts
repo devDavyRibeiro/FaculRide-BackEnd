@@ -10,7 +10,8 @@ import {
   cadastrarFotoCnhUsuario,
   validarCnhUsuario,
   deletarFotoUsuario,
-  alterarSenha
+  alterarSenha,
+  redefirSenha
 } from "../controllers/usuario.controller";
 import { Iusuario, IusuarioFiltros } from "../interfaces/Iusuario";
 import { AuthorizeMiddleware } from "../middlewares/authorize.middleware";
@@ -38,6 +39,8 @@ router.post("/", async (req, res) => {
 router.post("/login", (req, res) => {
   loginUsuario(req, res);
 });
+
+router.post("/redefinir-senha",redefirSenha)
 
 // A partir daqui todas as rotas são protegidas
 router.use(AuthorizeMiddleware as any);

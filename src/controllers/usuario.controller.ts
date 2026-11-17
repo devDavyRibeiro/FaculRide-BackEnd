@@ -564,3 +564,51 @@ export const esqueciSenhaUsuario = async (req: Request, res: Response) => {
     return
   }
 };
+
+export const redefirSenha = async(req:Request,res:Response)=>{
+  try {
+    let idUsuario:number = 0;
+    const {senha}  = req.body
+    const headerAuth =
+      (req.headers["authorization"] as string) ||
+      (req.headers["x-access-token"] as string);
+
+    if (!headerAuth) {
+      res.status(401).json({ erro: "Token não fornecido." });
+      return
+    }
+
+    // Suporta "Bearer xxx" ou apenas "xxx"
+    const token = headerAuth.startsWith("Bearer ")
+      ? headerAuth.slice(7).trim()
+      : headerAuth.trim();
+
+    const secret = process.env.JWT_SECRET || "secretoo123";
+
+    jwt.verify(token, secret, (err, decoded: any) => {
+      if (err || !decoded) {
+        res.status(401).json({ erro: "Token inválido ou expirado." });
+        return
+      }
+      idUsuario = decoded.id ?? decoded.idUsuario;
+    });
+
+    validarSenha(senha);
+    const senhaCriptografada = await bcrypt.hash(senha,10)
+
+    await UsuarioModel.update(
+      {senha:senhaCriptografada},
+      {
+        where:{
+          idUsuario:idUsuario
+        }
+      }
+    )
+    res.status(204).end()
+    return
+  } catch (error) {
+    console.log(`Erro ao redefinir senha: ${error}`)
+    res.status(500).json('Erro ao redefinir senha')
+    return     
+  }
+}
