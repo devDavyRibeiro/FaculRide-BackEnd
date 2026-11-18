@@ -16,10 +16,10 @@ import { enviarEmailCnhValidada } from "../utils/AzureEmail";
 
 // Validação de senha forte
 function validarSenha(senha: string) {
-  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,}$/;
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   if (!regex.test(senha)) {
     throw new Error(
-      "A senha deve conter no mínimo: 6 caracteres, 1 letra minúscula, 1 letra maiúscula, 1 número e 1 caractere especial (@$!%*#?&)"
+      "A senha deve conter no mínimo: 8 caracteres, 1 letra minúscula, 1 letra maiúscula, 1 número e 1 caractere especial (@$!%*#?&)"
     );
   }
 }
@@ -568,7 +568,7 @@ export const esqueciSenhaUsuario = async (req: Request, res: Response) => {
 export const redefirSenha = async(req:Request,res:Response)=>{
   try {
     let idUsuario:number = 0;
-    const {senha}  = req.body
+    const {novaSenha}  = req.body
     const headerAuth =
       (req.headers["authorization"] as string) ||
       (req.headers["x-access-token"] as string);
@@ -593,8 +593,8 @@ export const redefirSenha = async(req:Request,res:Response)=>{
       idUsuario = decoded.id ?? decoded.idUsuario;
     });
 
-    validarSenha(senha);
-    const senhaCriptografada = await bcrypt.hash(senha,10)
+    validarSenha(novaSenha);
+    const senhaCriptografada = await bcrypt.hash(novaSenha,10)
 
     await UsuarioModel.update(
       {senha:senhaCriptografada},
@@ -606,9 +606,9 @@ export const redefirSenha = async(req:Request,res:Response)=>{
     )
     res.status(204).end()
     return
-  } catch (error) {
+  } catch (error:any) {
     console.log(`Erro ao redefinir senha: ${error}`)
-    res.status(500).json('Erro ao redefinir senha')
+    res.status(500).json({message:error})
     return     
   }
 }
