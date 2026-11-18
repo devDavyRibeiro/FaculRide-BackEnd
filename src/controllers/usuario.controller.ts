@@ -541,7 +541,7 @@ export const esqueciSenhaUsuario = async (req: Request, res: Response) => {
     const usuario = await UsuarioModel.findOne({ where: { email } });
 
     if (!usuario) {
-      res.status(404).json({ erro: "Email não encontrado" });
+      res.status(404).json({ erro: "Erro ao enviar e-mail de recuperação de senha" });
       return;
     }
 
