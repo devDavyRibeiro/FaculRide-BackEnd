@@ -615,7 +615,7 @@ export const redefirSenha = async(req:Request,res:Response)=>{
     return
   } catch (error:any) {
     console.log(`Erro ao redefinir senha: ${error}`)
-    res.status(500).json({message:error})
+    res.status(500).json({erro:"Erro ao redefinir senha"})
     return     
   }
 }
