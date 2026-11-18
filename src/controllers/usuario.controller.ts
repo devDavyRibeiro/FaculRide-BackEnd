@@ -15,13 +15,9 @@ import { uploadFileToAzure } from "../services/blobStorageService";
 import { enviarEmailCnhValidada } from "../utils/AzureEmail";
 
 // Validação de senha forte
-function validarSenha(senha: string) {
+function validarSenha(senha:string):boolean {
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-  if (!regex.test(senha)) {
-    throw new Error(
-      "A senha deve conter no mínimo: 8 caracteres, 1 letra minúscula, 1 letra maiúscula, 1 número e 1 caractere especial (@$!%*#?&)"
-    );
-  }
+  return regex.test(senha)
 }
 
 // Cadastro de usuário
@@ -83,7 +79,10 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
   usuario.email = emailNormalizado;
 
   // Valida e criptografa senha
-  validarSenha(usuario.senha);
+  
+  if(!validarSenha(usuario.senha)){
+      throw  new Error("Senha não esta nos moldes corretos");
+    }
   const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
   usuario.senha = senhaCriptografada;
 
@@ -495,7 +494,11 @@ export const alterarSenha = async (req: Request, res: Response) => {
       return res.status(401).json({ erro: "Senha atual incorreta" });
     }
 
-    validarSenha(novaSenha);
+    
+    if(!validarSenha(novaSenha)){
+      res.status(400).json({ erro: "Senha não esta nos moldes corretos" });
+      return
+    }
 
     const novaSenhaHash = await bcrypt.hash(novaSenha, 10);
 
@@ -593,7 +596,11 @@ export const redefirSenha = async(req:Request,res:Response)=>{
       idUsuario = decoded.id ?? decoded.idUsuario;
     });
 
-    validarSenha(novaSenha);
+    
+    if(!validarSenha(novaSenha)){
+      res.status(400).json({ erro: "Senha não esta nos moldes corretos" });
+      return
+    }
     const senhaCriptografada = await bcrypt.hash(novaSenha,10)
 
     await UsuarioModel.update(
