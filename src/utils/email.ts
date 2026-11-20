@@ -19,8 +19,8 @@ export const smtp = nodemailer.createTransport({
   connectionTimeout: 30000,
   greetingTimeout: 20000,
   socketTimeout: 30000,
-  logger: true,
-  debug: true,
+  logger: false,
+  debug: false,
   tls: {
     minVersion: 'TLSv1.2',
     // Em caso de proxy/mitm, pode testar com:
@@ -45,6 +45,31 @@ export async function enviarEmailBoasVindas(destinatario: string, nome: string) 
     from: `"${FROM_NAME}" <${FROM_EMAIL}>`, // tem que ser o Gmail verificado
     to: destinatario,
     subject: 'Bem-vindo(a) à FaculRide 🎉',
+    html
+  });
+}
+
+export async function enviarEmailRecuperacaoSenha(destinatario: string, token: string) {
+  const url = process.env.NODE_ENV === 'development'
+  ? 'http://localhost:4200'
+  : 'https://faculride-front.duckdns.org';
+  const html = `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h2>Recuperação de Senha 🔑</h2>
+      <p>Olá,</p>
+      <p>Recebemos uma solicitação para redefinir sua senha.</p>
+      <p>Use o seguinte token para redefinir sua senha:</p>
+      <h3 style="color: #007BFF;"><a href="${url}/redefinir-senha/${token}" target="_blank">${url}/redefinir-senha/${token}</h3></a>
+      <p style="font-size: 0.9rem; color: #555;">
+        Este é um e-mail automático, não responda.
+      </p>
+    </div>
+  `;
+
+  await smtp.sendMail({
+    from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+    to: destinatario,
+    subject: 'Recuperação de Senha 🔑',
     html
   });
 }

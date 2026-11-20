@@ -27,7 +27,6 @@ function getClient() {
 export async function sendLog(message: any) {
   try {
     const client = getClient();
-
     if (client) {
       client.trackTrace({
         message: JSON.stringify(message),

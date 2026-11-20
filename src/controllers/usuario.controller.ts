@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { enviarEmailBoasVindas } from "../utils/email";
+import { enviarEmailBoasVindas, enviarEmailRecuperacaoSenha } from "../utils/email";
 dotenv.config();
 
 import sequelize from "../config/database";
@@ -15,13 +15,9 @@ import { uploadFileToAzure } from "../services/blobStorageService";
 import { enviarEmailCnhValidada } from "../utils/AzureEmail";
 
 // Validação de senha forte
-function validarSenha(senha: string) {
-  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,}$/;
-  if (!regex.test(senha)) {
-    throw new Error(
-      "A senha deve conter no mínimo: 6 caracteres, 1 letra minúscula, 1 letra maiúscula, 1 número e 1 caractere especial (@$!%*#?&)"
-    );
-  }
+function validarSenha(senha:string):boolean {
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return regex.test(senha)
 }
 
 // Cadastro de usuário
@@ -83,7 +79,10 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
   usuario.email = emailNormalizado;
 
   // Valida e criptografa senha
-  validarSenha(usuario.senha);
+  
+  if(!validarSenha(usuario.senha)){
+      throw  new Error("Senha não esta nos moldes corretos");
+    }
   const senhaCriptografada = await bcrypt.hash(usuario.senha, 10);
   usuario.senha = senhaCriptografada;
 
@@ -240,7 +239,6 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
 
   try {
     const usuario = await UsuarioModel.findByPk(id);
-    console.log("Usuário encontrado:", usuario);
     if (!usuario) {
       return res.status(404).json({ erro: "Usuário não encontrado" });
     }
@@ -496,7 +494,11 @@ export const alterarSenha = async (req: Request, res: Response) => {
       return res.status(401).json({ erro: "Senha atual incorreta" });
     }
 
-    validarSenha(novaSenha);
+    
+    if(!validarSenha(novaSenha)){
+      res.status(400).json({ erro: "Senha não esta nos moldes corretos" });
+      return
+    }
 
     const novaSenhaHash = await bcrypt.hash(novaSenha, 10);
 
@@ -534,3 +536,86 @@ export const deletarFotoUsuario = async (req: Request, res: Response) => {
     return res.status(500).json({ erro: error.message || "Erro ao deletar foto" });
   }
 };
+
+export const esqueciSenhaUsuario = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    const usuario = await UsuarioModel.findOne({ where: { email } });
+
+    if (!usuario) {
+      res.status(404).json({ erro: "Erro ao enviar e-mail de recuperação de senha" });
+      return;
+    }
+
+      const token = jwt.sign(
+      {
+        id: usuario.idUsuario,
+        nome: usuario.nome,
+        tipoUsuario: usuario.tipoUsuario,
+      },
+      process.env.JWT_SECRET || "secretoo123",
+      { expiresIn: "30min" }
+    );
+    await enviarEmailRecuperacaoSenha(usuario.email,token);
+
+    res.status(204).end();
+    return;
+  } catch (error: any) {
+    console.error("Erro ao enviar e-mail de recuperação de senha:", error);
+    res.status(500).json({ erro: error.message || "Erro ao enviar e-mail de recuperação de senha" });
+    return
+  }
+};
+
+export const redefirSenha = async(req:Request,res:Response)=>{
+  try {
+    let idUsuario:number = 0;
+    const {novaSenha}  = req.body
+    const headerAuth =
+      (req.headers["authorization"] as string) ||
+      (req.headers["x-access-token"] as string);
+
+    if (!headerAuth) {
+      res.status(401).json({ erro: "Token não fornecido." });
+      return
+    }
+
+    // Suporta "Bearer xxx" ou apenas "xxx"
+    const token = headerAuth.startsWith("Bearer ")
+      ? headerAuth.slice(7).trim()
+      : headerAuth.trim();
+
+    const secret = process.env.JWT_SECRET || "secretoo123";
+
+    jwt.verify(token, secret, (err, decoded: any) => {
+      if (err || !decoded) {
+        res.status(401).json({ erro: "Token inválido ou expirado." });
+        return
+      }
+      idUsuario = decoded.id ?? decoded.idUsuario;
+    });
+
+    
+    if(!validarSenha(novaSenha)){
+      res.status(400).json({ erro: "Senha não esta nos moldes corretos" });
+      return
+    }
+    const senhaCriptografada = await bcrypt.hash(novaSenha,10)
+
+    await UsuarioModel.update(
+      {senha:senhaCriptografada},
+      {
+        where:{
+          idUsuario:idUsuario
+        }
+      }
+    )
+    res.status(204).end()
+    return
+  } catch (error:any) {
+    console.log(`Erro ao redefinir senha: ${error}`)
+    res.status(500).json({erro:"Erro ao redefinir senha"})
+    return     
+  }
+}
