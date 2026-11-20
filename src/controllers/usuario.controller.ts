@@ -1,3 +1,4 @@
+import { Function } from './../../node_modules/@babel/types/lib/index-legacy.d';
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -13,12 +14,25 @@ import { Iusuario, IRetornoCadastroUsuario, IusuarioFiltros } from "../interface
 import { IVeiculo } from "../interfaces/Iveiculo";
 import { uploadFileToAzure } from "../services/blobStorageService";
 import { enviarEmailCnhValidada } from "../utils/AzureEmail";
+import { cpf } from "cpf";
 
 // Validação de senha forte
 function validarSenha(senha:string):boolean {
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return regex.test(senha)
 }
+
+function validarCPF(cpfPassado:string,  err:(erro:string)=>void) {
+  const cpfValidado = cpf.inspect(cpfPassado)
+  if(cpfValidado.valid)
+  {
+    return cpfValidado.normalized
+  }
+  else{
+    err('CPF inválido')
+  }
+  return ''
+} 
 
 // Cadastro de usuário
 export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadastroUsuario> => {
@@ -55,11 +69,12 @@ export const cadastrarUsuario = async (usuario: Iusuario): Promise<IRetornoCadas
   }
 
   // CPF — 11 dígitos + unicidade
-  const cpfSomenteDigitos = String(usuario.cpf ?? "").replace(/\D/g, "");
-  if (!/^\d{11}$/.test(cpfSomenteDigitos)) {
-    throw new Error("CPF deve conter exatamente 11 dígitos numéricos.");
-  }
-  usuario.cpf = cpfSomenteDigitos;
+
+  const cpfValidado = validarCPF(usuario.cpf,(erro)=>{
+    throw new Error(erro)
+  })
+
+  usuario.cpf = cpfValidado;
 
   const cpfJaExiste = await UsuarioModel.findOne({ where: { cpf: usuario.cpf } });
   if (cpfJaExiste) {
@@ -278,7 +293,8 @@ export const buscarUsuarioPorId = async (req: Request, res: Response) => {
 // Atualizar dados do usuário
 export const atualizarUsuario = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const dados = req.body as Iusuario;
+  const dado = req.body as Iusuario;
+  const tiposPermitidos = ["passageiro", "motorista"];
 
   try {
     const usuario = await UsuarioModel.findByPk(id);
@@ -287,7 +303,71 @@ export const atualizarUsuario = async (req: Request, res: Response) => {
       return res.status(404).json({ erro: "Usuário não encontrado" });
     }
 
-    await usuario.update(dados);
+
+  if (!tiposPermitidos.includes(dado.tipoUsuario)) {
+  return res.json({mensage:"Tipo de usuário inválido"});
+  }
+
+  if (dado.tipoUsuario === "motorista" && !dado.cnh) {
+  return res.json({mensage:"Motoristas precisam informar o número da CNH"});
+  }
+
+  if (!dado.dataNascimento) {
+  return res.json({mensage:"Data de nascimento é obrigatória"});
+  }
+
+  const dataNascimento = new Date(dado.dataNascimento);
+  const hoje = new Date();
+  if (isNaN(dataNascimento.getTime()) || dataNascimento > hoje) {
+  return res.json({mensage:"Data de nascimento inválida"});
+  }
+
+  // RA — 13 dígitos + unicidade
+  const raSomenteDigitos = String(dado.ra ?? "").replace(/\D/g, "");
+  if (!/^\d{13}$/.test(raSomenteDigitos)) {
+  return res.json({mensage:"RA deve conter exatamente 13 dígitos numéricos."});
+  }
+  dado.ra = raSomenteDigitos;
+
+  const raJaExiste = await UsuarioModel.findOne({ where: { ra: dado.ra } });
+  if (raJaExiste) {
+  return res.json({mensage:"RA já cadastrado para outro usuário."});
+  }
+
+  // CPF — 11 dígitos + unicidade
+
+  const cpfValidado = validarCPF(dado.cpf,(erro)=>{
+  return res.json({mensage:erro})
+  })
+
+  dado.cpf = cpfValidado;
+
+  const cpfJaExiste = await UsuarioModel.findOne({ where: { cpf: dado.cpf } });
+  if (cpfJaExiste) {
+  return res.json({mensage:"CPF já cadastrado."});
+  }
+
+  // E-mail — formato + unicidade
+  const emailNormalizado = String(dado.email ?? "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalizado)) {
+  return res.json({mensage:"E-mail inválido."});
+  }
+
+  const emailJaExiste = await UsuarioModel.findOne({ where: { email: emailNormalizado } });
+  if (emailJaExiste) {
+  return res.json({mensage:"E-mail já cadastrado."});
+  }
+  dado.email = emailNormalizado;
+
+  // Valida e criptografa senha
+  
+  if(!validarSenha(dado.senha)){
+      return res.json({mensage:"Senha não esta nos moldes corretos"});
+    }
+  const senhaCriptografada = await bcrypt.hash(dado.senha, 10);
+  dado.senha = senhaCriptografada;
+
+    await usuario.update(dado);
 
     return res.status(200).json({ mensagem: "Usuário atualizado com sucesso" });
   } catch (error: any) {
