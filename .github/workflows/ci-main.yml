@@ -35,6 +35,20 @@ jobs:
       - name: Instalar Dependências
         run: npm ci
 
+      # Testes automatizados com cobertura. Se algum teste falhar ou a cobertura
+      # ficar abaixo de 80% (coverageThreshold do jest.config.js), a pipeline para
+      # aqui e não gera versão, imagem Docker nem deploy.
+      - name: Rodar testes automatizados com cobertura
+        run: npm run test:coverage
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-cobertura
+          path: coverage/
+          if-no-files-found: ignore
+
       - name: Calcular nova versão
         id: version
         shell: bash
