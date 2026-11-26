@@ -167,11 +167,13 @@ describe("1. Cadastro geral (validações)", () => {
   });
 
   describe("1.6 Senha (complexidade e criptografia)", () => {
-    const MSG =
-      "A senha deve conter no mínimo: 6 caracteres, 1 letra minúscula, 1 letra maiúscula, 1 número e 1 caractere especial (@$!%*#?&)";
+    // Regra atual do back-end (usuario.controller.ts): mínimo de 8 caracteres, com
+    // minúscula, maiúscula, número e caractere especial (@$!%*?&). O cartão do Trello
+    // ainda fala em 6 caracteres; a divergência foi levada ao P.O.
+    const MSG = "Senha não esta nos moldes corretos";
 
     it.each([
-      ["curta demais (5)", "Ab@12"],
+      ["curta demais (7, logo abaixo do limite)", "Ab@1234"],
       ["sem maiúscula", "senha@123"],
       ["sem minúscula", "SENHA@123"],
       ["sem número", "Senha@abc"],
@@ -184,8 +186,8 @@ describe("1. Cadastro geral (validações)", () => {
       expect(mUsuario.create).not.toHaveBeenCalled();
     });
 
-    it("aceita senha no limite mínimo (6 caracteres válidos)", async () => {
-      const res = await cadastrar(passageiroValido({ senha: "Ab@123" }));
+    it("aceita senha no limite mínimo (8 caracteres válidos)", async () => {
+      const res = await cadastrar(passageiroValido({ senha: "Ab@12345" }));
       expect(res.status).toBe(201);
     });
 
@@ -197,9 +199,8 @@ describe("1. Cadastro geral (validações)", () => {
       expect(await bcrypt.compare("Senha@123", hash)).toBe(true);
     });
 
-    // Achado de segurança: cadastrarUsuario faz console.log("Criptografando senha: ", hash),
-    // e o logger da aplicação envia logs ao CloudWatch.
-    bug("não registra o hash da senha nos logs", async () => {
+    // Achado de segurança corrigido (fix/hash-console): o hash não é mais escrito no log.
+    it("não registra o hash da senha nos logs", async () => {
       const spy = jest.spyOn(console, "log").mockImplementation(() => {});
       await cadastrar(passageiroValido());
       const vazou = spy.mock.calls.some((args) => args.some((a) => String(a).includes("$2")));
@@ -344,7 +345,7 @@ describe("3. Upload de documentação e mídia", () => {
 
     // O cartão pede: imagem enviada ao storage, URL pública gravada em `usuario`, status 200.
     // Na branch develop o código de S3 está COMENTADO e o endpoint devolve 200 sem enviar nem gravar nada.
-    bug("envia ao storage e grava a URL pública em usuario (fotoUrl/fotoPath)", async () => {
+    it("envia ao storage e grava a URL pública em usuario (fotoUrl/fotoPath)", async () => {
       const u = usuarioComo("passageiro");
       const res = await request(app)
         .post("/api/usuario/foto/upload")
@@ -515,8 +516,8 @@ describe("4. Alteração de senha (PUT /api/usuario/alterar-senha)", () => {
     expect(res.status).toBe(404);
   });
 
-  // Achado: senha fraca cai no catch genérico e vira 500; é erro de entrada (deveria ser 400).
-  bug("novaSenha fraca retorna 400 (hoje retorna 500)", async () => {
+  // Achado corrigido: senha fraca agora é erro de validação (400), e não 500.
+  it("novaSenha fraca retorna 400", async () => {
     const res = await alterar({ senhaAtual: SENHA_ATUAL, novaSenha: "fraca", confirmarSenha: "fraca" });
     expect(res.status).toBe(400);
     expect(usuarioBanco.update).not.toHaveBeenCalled();

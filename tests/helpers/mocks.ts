@@ -37,8 +37,12 @@ jest.mock("../../src/config/supabase", () => ({ supabaseAdmin: {} }));
 jest.mock("../../src/utils/email", () => ({
   enviarEmailBoasVindas: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("../../src/utils/lambdaEmail", () => ({
+jest.mock("../../src/utils/AzureEmail", () => ({
   enviarEmailCnhValidada: jest.fn().mockResolvedValue(undefined),
+}));
+// Storage da Azure simulado: os testes nunca enviam arquivo para a nuvem.
+jest.mock("../../src/services/blobStorageService", () => ({
+  uploadFileToAzure: jest.fn(async (_buf: Buffer, nome: string) => `https://teste.blob.core.windows.net/faculride/${nome}`),
 }));
 
 import sequelize from "../../src/config/database";

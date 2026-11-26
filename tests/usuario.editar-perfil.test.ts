@@ -106,8 +106,8 @@ describe("3. Atualização da foto de perfil (PUT /api/usuario/foto/update e PAT
     expect(res.status).toBe(200);
   });
 
-  // Achado: diferente do upload inicial, a ATUALIZAÇÃO não valida o tipo do arquivo.
-  bug("PUT recusa formato inválido (gif/pdf/exe) com 400, como no upload inicial", async () => {
+  // Achado corrigido: a atualização agora valida o tipo do arquivo, como o upload inicial.
+  it("PUT recusa formato inválido (gif/pdf/exe) com 400, como no upload inicial", async () => {
     for (const tipo of ["image/gif", "application/pdf", "application/x-msdownload"]) {
       const res = await enviar("put", tipo);
       expect(res.status).toBe(400);
@@ -116,7 +116,7 @@ describe("3. Atualização da foto de perfil (PUT /api/usuario/foto/update e PAT
 
   // Cartão: apagar a foto antiga, subir a nova ao storage e responder 200 com a nova URL (`url`).
   // Na develop o bloco de S3 está comentado e a resposta não traz URL nenhuma.
-  bug("PUT retorna 200 com a nova URL gerada (campo `url`)", async () => {
+  it("PUT retorna 200 com a nova URL gerada (campo `url`)", async () => {
     const res = await enviar("put");
     expect(res.status).toBe(200);
     expect(res.body.url).toMatch(/^https?:\/\//);
@@ -144,10 +144,10 @@ describe("5. Remoção da foto de perfil (DELETE /api/usuario/foto/delete)", () 
     expect(res.status).toBe(401);
   });
 
-  it("200 'Foto do usuário deletada com sucesso'", async () => {
+  it("200 'Referência da foto removida com sucesso'", async () => {
     const res = await request(app).delete("/api/usuario/foto/delete").set(auth(1));
     expect(res.status).toBe(200);
-    expect(res.body.mensagem).toBe("Foto do usuário deletada com sucesso");
+    expect(res.body.mensagem).toBe("Referência da foto removida com sucesso");
   });
 
   it.todo("remove de fato o arquivo do Azure Blob (o texto do cartão ainda cita S3; hoje o handler devolve 200 sem apagar nada)");

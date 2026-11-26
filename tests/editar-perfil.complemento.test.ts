@@ -19,7 +19,10 @@ jest.mock("../src/models/veiculo.model", () => ({
 jest.mock("../src/models/logAcesso.model", () => ({ LogAcessoModel: { create: jest.fn() } }));
 jest.mock("../src/config/supabase", () => ({ supabaseAdmin: {} }));
 jest.mock("../src/utils/email", () => ({ enviarEmailBoasVindas: jest.fn() }));
-jest.mock("../src/utils/lambdaEmail", () => ({ enviarEmailCnhValidada: jest.fn() }));
+jest.mock("../src/utils/AzureEmail", () => ({ enviarEmailCnhValidada: jest.fn() }));
+jest.mock("../src/services/blobStorageService", () => ({
+  uploadFileToAzure: jest.fn(async (_buf: Buffer, nome: string) => `https://teste.blob.core.windows.net/faculride/${nome}`),
+}));
 
 import express from "express";
 import request from "supertest";
