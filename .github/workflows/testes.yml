@@ -1,0 +1,39 @@
+name: Testes automatizados
+
+# Roda a suíte com cobertura em todo push de branch de trabalho e em todo Pull Request.
+# Em develop e main os testes já rodam dentro do CI - Development / CI - Production,
+# antes do build e do deploy; por isso essas duas branches ficam de fora aqui.
+on:
+  push:
+    branches-ignore:
+      - develop
+      - main
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Instalar Dependências
+        run: npm ci
+
+      # Falha se algum teste falhar ou se a cobertura ficar abaixo de 80%.
+      - name: Rodar testes automatizados com cobertura
+        run: npm run test:coverage
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-cobertura
+          path: coverage/
+          if-no-files-found: ignore
