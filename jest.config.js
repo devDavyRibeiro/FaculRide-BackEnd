@@ -1,11 +1,12 @@
 const fs = require("fs");
 const path = require("path");
 
-// Inclui a pasta "tests" (suíte deste PR) e, se existir, "src/__tests__" (suíte do PR #58,
-// US08), para que as duas suítes rodem juntas sem precisar de dois jest.config.js.
+// Inclui a pasta "tests" e a pasta "src" (onde fica src/__tests__, suíte do PR #58), para que
+// as duas suítes rodem juntas e para que a cobertura enxergue também os arquivos de src que
+// nenhum teste importa (senão eles ficariam fora da conta).
 const roots = ["<rootDir>/tests"];
-if (fs.existsSync(path.join(__dirname, "src", "__tests__"))) {
-  roots.push("<rootDir>/src/__tests__");
+if (fs.existsSync(path.join(__dirname, "src"))) {
+  roots.push("<rootDir>/src");
 }
 
 /** @type {import('jest').Config} */
@@ -29,7 +30,6 @@ module.exports = {
     "src/routes/{usuario,veiculo}.routes.ts",
     "src/middlewares/authorize.middleware.ts",
     "src/utils/{caronaFilter,viagemStatus}.ts",
-    "src/services/blobStorageService.ts",
   ],
   coverageReporters: ["text", "text-summary", "lcov", "json-summary"],
   // A pipeline falha se a cobertura desse escopo cair abaixo de 80%.
