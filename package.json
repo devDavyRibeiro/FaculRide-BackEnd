@@ -8,7 +8,8 @@
     "start": "node dist/server.js",
     "migrate": "sequelize-cli db:migrate",
     "undo-migrate-all": "sequelize-cli db:migrate:undo:all",
-    "test": "jest"
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "FaculRide",

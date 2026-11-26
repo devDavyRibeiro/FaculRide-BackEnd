@@ -20,4 +20,20 @@ module.exports = {
   clearMocks: true,
   // Os controllers escrevem muitos console.log/error; silencia para o relatório ficar legível
   silent: true,
+
+  // Cobertura: medida sobre os módulos das histórias de usuário testadas nesta entrega
+  // (cadastro, login, perfil, veículos, pesquisa/filtro de caronas, viagem e status da viagem).
+  // Módulos ainda sem suíte (chat, avaliação, pagamento, notificações) ficam fora desta conta.
+  collectCoverageFrom: [
+    "src/controllers/{usuario,veiculo,viagem}.controller.ts",
+    "src/routes/{usuario,veiculo}.routes.ts",
+    "src/middlewares/authorize.middleware.ts",
+    "src/utils/{caronaFilter,viagemStatus}.ts",
+    "src/services/blobStorageService.ts",
+  ],
+  coverageReporters: ["text", "text-summary", "lcov", "json-summary"],
+  // A pipeline falha se a cobertura desse escopo cair abaixo de 80%.
+  coverageThreshold: {
+    global: { statements: 80, branches: 80, functions: 80, lines: 80 },
+  },
 };
