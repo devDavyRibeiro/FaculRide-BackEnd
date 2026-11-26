@@ -36,6 +36,9 @@ jobs:
       - name: Instalar Dependências
         run: npm ci
 
+      - name: Executar testes
+        run: npm test -- --runInBand
+
       - name: Calcular nova versão Preview
         id: version
         run: |
